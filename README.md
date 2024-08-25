@@ -1,4 +1,4 @@
-# HAD (Hiroto AWS Deployer)
+# HAD
 ## Overview
 HAD (h-akira AWS Deployer) is a tool for deploying serverless web applications on AWS.
 ## Install
