@@ -235,16 +235,6 @@ def lambdaname2index(lambdaname):
 def method2index(method):
   return method.replace("GET","QQQxq").replace("POST","XqQQQQXQq")
 
-# def read_settings_json():
-#   with open(os.path.join(os.path.dirname(__file__), "settings.json"), "r") as f:
-#     settings_json = json.load(f)
-#   return settings_json
-#
-# def read_latest_version_json():
-#   with open(os.path.join(os.path.dirname(__file__), "latest_version.json"), "r") as f:
-#     latest_version = json.load(f)
-#   return latest_version
-
 def main():
   options = parse_args()
   with open(options.file, "r") as f:
@@ -252,9 +242,7 @@ def main():
   CURRENT_DIR = os.path.dirname(options.file)
   with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
     versions = json.load(f)
-  # sys.path.append(CURRENT_DIR, os.path.dirname(settings_json["layer"]["directory"]))
   sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
-  print(os.path.join(CURRENT_DIR,"build/project"))
   from project import settings
 
 
