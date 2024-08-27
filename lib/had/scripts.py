@@ -130,14 +130,14 @@ def layers2s3(settings_json_path, project_upload=False, external_upload=False):
   if external_upload:
     DIR = os.path.join(CURRENT_DIR, settings_json['pip']['layer']['directory'])
     NEW_VERSION = versions['external'] + 1
-    upload(S3_BUCKET, S3_KEY, NEW_VERSION, DIR, 'external')
+    upload_layer(S3_BUCKET, S3_KEY, NEW_VERSION, DIR, 'external')
     versions["external"] = NEW_VERSION
     with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
       json.dump(versions, f, indent=2)
   if project_upload:
     DIR = os.path.join(CURRENT_DIR, settings_json['layer']['directory'])
     NEW_VERSION = versions['project'] + 1
-    upload(S3_BUCKET, S3_KEY, NEW_VERSION, DIR, 'project')
+    upload_layer(S3_BUCKET, S3_KEY, NEW_VERSION, DIR, 'project')
     versions["project"] = NEW_VERSION
     with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
       json.dump(versions, f, indent=2)

@@ -42,14 +42,14 @@ def main():
       print("===== Handlers to S3 =====")
       from had.scripts import handlers2s3
       handlers2s3(options.handlers2s3)
-    if options.project1s3:
+    if options.project2s3:
       print("===== Project to S3 =====")
-      from had.scripts import project2s3
-      project2s3(options.project2s3, project_upload=True)
+      from had.scripts import layers2s3
+      layers2s3(options.project2s3, project_upload=True)
     if options.external2s3:
       print("===== External to S3 =====")
-      from had.scripts import external2s3
-      external2s3(options.external2s3)
+      from had.scripts import layers2s3
+      layers2s3(options.external2s3, external_upload=True)
 
 if __name__ == '__main__':
   main()
