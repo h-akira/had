@@ -1,8 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-# Created: 2024-08-12 02:16:17
-
 import os
 import sys
 import json
@@ -212,20 +207,6 @@ Resources:
 #           MetricsEnabled: true
 # """
 
-def parse_args():
-  import argparse
-  parser = argparse.ArgumentParser(description="""\
-
-""", formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--version", action="version", version='%(prog)s 0.0.1')
-  # parser.add_argument("-o", "--output", metavar="output-file", default="output", help="output file")
-  # parser.add_argument("-", "--", action="store_true", help="")
-  parser.add_argument("file", metavar="settings-json-file", help="settings.json")
-  options = parser.parse_args()
-  if not os.path.isfile(options.file): 
-    raise Exception("The input file does not exist.") 
-  return options
-
 def resource2index(resource):
   return resource.replace("/","XxXQq00qQXxX").replace("{","QXxQ00").replace("}","00QxXQ").replace("_","XqqxQ0QxqqX")
 
@@ -235,17 +216,14 @@ def lambdaname2index(lambdaname):
 def method2index(method):
   return method.replace("GET","QQQxq").replace("POST","XqQQQQXQq")
 
-def main():
-  options = parse_args()
-  with open(options.file, "r") as f:
+def gen_yaml(settings_json_path):
+  with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
-  CURRENT_DIR = os.path.dirname(options.file)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
   with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
     versions = json.load(f)
   sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
   from project import settings
-
-
   if settings_json["layer"]["version"] != "latest":
     versions["project"] = settings_json["layer"]["version"]
   if settings_json["pip"]["layer"]["version"] != "latest":
@@ -380,8 +358,6 @@ def main():
   with open(settings_json["CloudFormation"]["template"], "w") as f:
     f.write(YAML)
   print("Complete!")
-
-
 
 if __name__ == '__main__':
   main()

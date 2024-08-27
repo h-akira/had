@@ -1,14 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
-# Created: 2024-08-06 00:17:21
-
 import sys
 import os
 import json
-import csv
 import shutil
 import importlib
+import subprocess
 
 CODE_TEMPLATE = """\
 import sys
@@ -42,32 +37,10 @@ def lambda_handler(event, context):
   except Exception as e:
     return error_render(request, traceback.format_exc())"""
 
-def parse_args():
-  import argparse
-  parser = argparse.ArgumentParser(description="""\
-
-""", formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--version", action="version", version='%(prog)s 0.0.1')
-  parser.add_argument("-o", "--output", metavar="output-file", default="output", help="output file")
-  parser.add_argument("-a", "--all", action="store_true", help="更新の有無に関係なくすべてのhandlerを生成")
-  # parser.add_argument("-s", "--source", action="store_true", help="ソースコードを残す")
-  # parser.add_argument("-", "--", action="store_true", help="")
-  parser.add_argument("file", metavar="settings-json-file", help="settings.json")
-  options = parser.parse_args()
-  # if not os.path.isfile(options.file): 
-    # raise Exception("The input file does not exist.") 
-  return options
-
-def read_settings_json():
-  with open(os.path.join(os.path.dirname(__file__), "settings.json"), "r") as f:
+def gen_handlers(settings_json_path):
+  with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
-  return settings_json
-
-def main():
-  options = parse_args()
-  with open(options.file, "r") as f:
-    settings_json = json.load(f)
-  CURRENT_DIR = os.path.dirname(options.file)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
   sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
   sys.path.append(os.path.join(CURRENT_DIR,settings_json["pip"]["layer"]["directory"], settings_json["pip"]["layer"]["path"]))
   from project import settings
@@ -114,10 +87,60 @@ def main():
   for EXIST_APP in EXIST_APPS:
     print(f"Remove directory: {os.path.join(CURRENT_DIR, settings_json['handlers']['directory'], EXIST_APP)}")
     shutil.rmtree(os.path.join(CURRENT_DIR, settings_json["handlers"]["directory"], EXIST_APP))
+  print("Complete!")
 
+def handlers2s3(settings_json_path):
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
+  with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
+    versions = json.load(f)
+  HANDLERS_DIR = os.path.join(CURRENT_DIR, settings_json['handlers']['directory'])
+  S3_BUCKET = settings_json['S3']['bucket']
+  S3_KEY = settings_json['S3']['key']
+  # 新しいバージョンを設定
+  NEW_VERSION = versions['handlers'] + 1
+  # aws s3 cp コマンドを実行
+  subprocess.run(
+    ['aws', 's3', 'cp', HANDLERS_DIR, f's3://{S3_BUCKET}/{S3_KEY}/handlers/v{NEW_VERSION:04d}', '--recursive']
+  )
+  print("Uploaded to S3.")
+  versions['handlers'] = NEW_VERSION
+  with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
+    json.dump(versions, f, indent=2)
 
+def upload_layer(S3_BUCKET, S3_KEY, NEW_VERSION, DIR, name):
+  if os.path.exists(os.path.join(DIR, f'{name}.zip')):
+    os.remove(os.path.join(DIR, f'{name}.zip'))
+  subprocess.run(['zip', '-r', f'{name}.zip', '.'], cwd=DIR)
+  subprocess.run(
+    ['aws', 's3', 'cp', os.path.join(DIR, f"{name}.zip"), 
+     f's3://{S3_BUCKET}/{S3_KEY}/layers/{name}/v{NEW_VERSION:04d}.zip']
+  )
+  print(f"Uploaded {name} to S3.")
 
-
+def layers2s3(settings_json_path, project_upload=False, external_upload=False):
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
+  with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
+    versions = json.load(f)
+  S3_BUCKET = settings_json['S3']['bucket']
+  S3_KEY = settings_json['S3']['key']
+  if external_upload:
+    DIR = os.path.join(CURRENT_DIR, settings_json['pip']['layer']['directory'])
+    NEW_VERSION = versions['external'] + 1
+    upload(S3_BUCKET, S3_KEY, NEW_VERSION, DIR, 'external')
+    versions["external"] = NEW_VERSION
+    with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
+      json.dump(versions, f, indent=2)
+  if project_upload:
+    DIR = os.path.join(CURRENT_DIR, settings_json['layer']['directory'])
+    NEW_VERSION = versions['project'] + 1
+    upload(S3_BUCKET, S3_KEY, NEW_VERSION, DIR, 'project')
+    versions["project"] = NEW_VERSION
+    with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
+      json.dump(versions, f, indent=2)
 
 if __name__ == '__main__':
   main()
