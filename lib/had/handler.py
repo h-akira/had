@@ -1,7 +1,6 @@
 import jwt
 from jwt import PyJWKClient
 from datetime import datetime
-from project import settings
 import urllib.parse
 from had.shourtcuts import error_render
 from http.cookies import SimpleCookie
@@ -62,6 +61,7 @@ class RequestClass:
   def _set_method(self):
     self.method = self.event['requestContext']["httpMethod"]
   def _set_auth(self):
+    from project import settings
     self.id_token = None
     self.access_token = None
     self.refresh_token = None

@@ -13,7 +13,7 @@ def parse_args():
 
 """, formatter_class = argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--version", action="version", version='%(prog)s 0.0.1')
-  parser.add_argument("-s", "--start-project", metavar="project-name", help="project name")
+  parser.add_argument("-s", "--start-project", action="store_true", help="start project")
   parser.add_argument("-Y", "--generate-cfn-yaml", metavar="settings-json", help="settings.json file")
   parser.add_argument("-H", "--generate-handlers", metavar="settings-json", help="settings.json file")
   parser.add_argument("-a", "--handlers2s3", metavar="settings-json", help="settings.json file")
@@ -29,7 +29,11 @@ def parse_args():
 
 def main():
   options = parse_args()
-  if options.generate_cfn_yaml:
+  if options.start_project:
+    print("===== Start Project =====")
+    from had.start import start_project
+    start_project(options.start_project)
+  elif options.generate_cfn_yaml:
     print("===== Generate CloudFormation YAML =====")
     from had.cfn import gen_yaml
     gen_yaml(options.generate_cfn_yaml)

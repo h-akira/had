@@ -1,5 +1,4 @@
 from had.shourtcuts import render, redirect, error_render
-from had.conf import settings
 import urllib.parse
 from datetime import datetime, timedelta
 from http.cookies import SimpleCookie
@@ -11,6 +10,7 @@ except ModuleNotFoundError:
 
 
 def logout_redirect(request):
+  from project import settings
   if request.auth:
     client = boto3.client('cognito-idp')
     response = client.global_sign_out(
@@ -41,6 +41,7 @@ def logout_redirect(request):
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
 def login_redirect(AuthParameters, AuthFlow="USER_PASSWORD_AUTH", return_error=False):
+  from project import settings
   client = boto3.client('cognito-idp')
   try:
     response = client.initiate_auth(

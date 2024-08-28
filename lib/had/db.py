@@ -1,8 +1,8 @@
 import boto3
-from project import settings
 
 class DynamoFactory:
   def __init__(self, table_name):
+    from project import settings
     self.table_name = table_name
     self.client = boto3.client("dynamodb", region_name=settings.AWS["region"])
   def insert(self, item):

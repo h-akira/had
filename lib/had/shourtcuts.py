@@ -1,5 +1,4 @@
 import os
-from .conf import settings
 import jinja2
 import importlib
 from http.cookies import SimpleCookie
@@ -12,6 +11,7 @@ except ModuleNotFoundError:
 #   pass
 
 def get_url(app_name, **kwargs):
+  from project import settings
   if app_name.count(":") != 1:
     raise ValueError("App name should be in the format `app_name:url_name`")
   app, name = app_name.split(":")
@@ -49,6 +49,7 @@ def redirect(app_name, set_cookie=None, **kwargs):
     }
 
 def render(request, template, context={}):
+  from project import settings
   if settings.LOCAL:
     templates_dir = os.path.join(settings.BASE_DIR, "templates")
   else:
