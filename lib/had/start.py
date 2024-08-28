@@ -144,7 +144,7 @@ settings_json_init = """\
   }}
 }}"""
 
-def start_project(project_name):
+def start_project():
   project_name = input("Enter project name (Generate a directory with this name): ")
   if os.path.exists(project_name):
     print("Project already exists.")
