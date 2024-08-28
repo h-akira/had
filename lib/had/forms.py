@@ -59,14 +59,14 @@ class CharField:
       tag_value=tag_value
     )
 
-form = Form(
-  fields={
-    'test': CharField(max_length=255),
-    'test2': CharField(max_length=255, required=False, tag_class='test_class', tag_value='test_value')
-  }
-)
-print(form.fields["test"].html())
-print(form.fields["test2"].html())
+# form = Form(
+#   fields={
+#     'test': CharField(max_length=255),
+#     'test2': CharField(max_length=255, required=False, tag_class='test_class', tag_value='test_value')
+#   }
+# )
+# print(form.fields["test"].html())
+# print(form.fields["test2"].html())
 
 
 

@@ -32,7 +32,7 @@ def main():
   if options.start_project:
     print("===== Start Project =====")
     from had.start import start_project
-    start_project(options.start_project)
+    start_project()
   elif options.generate_cfn_yaml:
     print("===== Generate CloudFormation YAML =====")
     from had.cfn import gen_yaml
