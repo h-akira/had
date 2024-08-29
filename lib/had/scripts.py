@@ -142,5 +142,53 @@ def layers2s3(settings_json_path, project_upload=False, external_upload=False):
     with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
       json.dump(versions, f, indent=2)
 
+def cfn_create(settings_json_path):
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
+  # スタックの作成
+  subprocess.run(
+    ['aws', 'cloudformation', 'create-stack', '--stack-name', settings_json['CloudFormation']['stack_name'], 
+     '--template-body', f'file://{os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"])}', 
+     '--capabilities', 'CAPABILITY_IAM']
+  )
+  print("Waiting for CloudFormation Stack create.")
+  subprocess.run(
+    ['aws', 'cloudformation', 'wait', 'stack-create-complete', '--stack-name', settings_json['CloudFormation']['stack_name']]
+  )
+  print("Finushed CloudFormation Stack create.")
+
+def cfn_update(settings_json_path):
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
+  # スタックの更新
+  subprocess.run(
+    ['aws', 'cloudformation', 'update-stack', '--stack-name', settings_json['CloudFormation']['stack_name'], 
+     '--template-body', f'file://{os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"])}', 
+     '--capabilities', 'CAPABILITY_IAM']
+  )
+  print("Waiting for CloudFormation Stack update.")
+  subprocess.run(
+    ['aws', 'cloudformation', 'wait', 'stack-update-complete', '--stack-name', settings_json['CloudFormation']['stack_name']]
+  )
+  print("Finushed CloudFormation Stack update.")
+
+def cfn_delete(settings_json_path):
+  if not input("Are you sure you want to delete the stack? (y/other): ") == "y":
+    print("Canceled.")
+    return None
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  # スタックの削除
+  subprocess.run(
+    ['aws', 'cloudformation', 'delete-stack', '--stack-name', settings_json['CloudFormation']['stack_name']]
+  )
+  print("Waiting for CloudFormation Stack delete.")
+  subprocess.run(
+    ['aws', 'cloudformation', 'wait', 'stack-delete-complete', '--stack-name', settings_json['CloudFormation']['stack_name']]
+  )
+  print("Finushed CloudFormation Stack delete.")
+
 if __name__ == '__main__':
   main()
