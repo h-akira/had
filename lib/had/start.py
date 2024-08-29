@@ -144,7 +144,70 @@ settings_json_init = """\
   }}
 }}"""
 
+settings_py_init = """\
+import sys
+import os
+
+PROJECT_NAME = "{project_name}"
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),'..'))
+TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
+HANDLERS_DIR = os.path.join(BASE_DIR, '../handlers')
+PYTHON_VERSION = '{python_version}'
+# LOGIN_URL = "accounts:login"
+# LOGIN_REDIRECT_URL = "XXXXX:XXXXX"
+# LOGOUT_REDIRECT_URL = "XXXXX:XXXXX"  
+LOCAL = False
+LOCAL_TEMPLATES = "build/templates"
+AWS = {{
+  "account": "{account}",
+  "region": "ap-northeast-1",
+  "API Gateway":{{
+    "name":"api-{stack}-{environment}",
+    "role2s3":{{
+      "name":"role-{stack}-{environment}-api2s3",
+      "policy":{{
+        "name":"policy-{stack}-{environment}-api2s3"
+      }}
+    }},
+    "stage": "stage-01",
+  }},
+  "Lambda":{{
+    "prefix":"lambda-{stack}-{environment}",
+    "role":{{
+      "name":"role-{stack}-{environment}-lambda-common",
+    }}
+  }},
+  "S3":{{
+    "bucket":"{s3_bucket}",
+    "key":"had"
+  }},
+  # "cognito":{{
+  #   "userPoolID":"XXXXX",
+  #   "clientID":"XXXXX"
+  # }}
+}}
+APPS = [
+  # {{
+  #   'name': 'accounts',
+  #   'url': 'accounts'
+  # }},
+  # {{
+  #   "name": "static",
+  #   "url": "static"
+  # }}
+]
+DEBUG = True
+"""
+
+def get_account():
+  account = subprocess.run(
+    ["aws", "sts", "get-caller-identity"],
+    stdout=subprocess.PIPE
+  ).stdout
+  return json.loads(account)["Account"]
+
 def start_project():
+  account = get_account()
   project_name = input("Enter project name (Generate a directory with this name): ")
   if os.path.exists(project_name):
     print("Project already exists.")
@@ -164,6 +227,12 @@ def start_project():
     python_version = "3.12"
   print("Creating project...")
   os.makedirs(project_name)
+  with open(os.path.join(project_name, "python.sh"), "w") as f:
+    f.write(python_shell)
+  os.chmod(os.path.join(project_name, "python.sh"), 0o755)
+  with open(os.path.join(project_name, "pip.sh"), "w") as f:
+    f.write(pip_shell)
+  os.chmod(os.path.join(project_name, "pip.sh"), 0o755)
   with open(os.path.join(project_name, "settings.json"), "w") as f:
     f.write(
       settings_json_init.format(
@@ -176,4 +245,25 @@ def start_project():
     )
   with open(os.path.join(project_name, "latest_version.json"), "w") as f:
     json.dump(latest_version_init, f, indent=2)
+  os.makedirs(os.path.join(project_name, "build/handlers"))
+  os.makedirs(os.path.join(project_name, "build/static"))
+  os.makedirs(os.path.join(project_name, "build/project/templates"))
+  os.makedirs(os.path.join(project_name, "build/project/python/lib/pyton{}/site-packages/project".format(python_version)))
+  os.makedirs(os.path.join(project_name, "build/external/python/lib/python{}/site-packages".format(python_version)))
+  os.symlink(
+    "build/project/python/lib/pyton{}/site-packages".format(python_version), 
+    os.path.join(project_name, project_name)
+  )
+  with open(os.path.join(project_name, "build/project/python/lib/pyton{}/site-packages/project/settings.py".format(python_version)), "w") as f:
+    f.write(
+      settings_py_init.format(
+        project_name=project_name,
+        python_version=python_version,
+        account=account,
+        stack=stack_name,
+        environment=environment,
+        s3_bucket=s3_bucket
+      )
+    )
+
 
