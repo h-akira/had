@@ -150,13 +150,15 @@ def cfn_create(settings_json_path):
   subprocess.run(
     ['aws', 'cloudformation', 'create-stack', '--stack-name', settings_json['CloudFormation']['stack_name'], 
      '--template-body', f'file://{os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"])}', 
-     '--capabilities', 'CAPABILITY_IAM']
+     '--capabilities', 'CAPABILITY_NAMED_IAM']
   )
   print("Waiting for CloudFormation Stack create.")
   subprocess.run(
-    ['aws', 'cloudformation', 'wait', 'stack-create-complete', '--stack-name', settings_json['CloudFormation']['stack_name']]
+    ['aws', 'cloudformation', 'wait', 'stack-create-complete', 
+     '--stack-name', settings_json['CloudFormation']['stack_name'],
+    ]
   )
-  print("Finushed CloudFormation Stack create.")
+  print("Finished CloudFormation Stack create.")
 
 def cfn_update(settings_json_path):
   with open(settings_json_path, "r") as f:
@@ -166,13 +168,13 @@ def cfn_update(settings_json_path):
   subprocess.run(
     ['aws', 'cloudformation', 'update-stack', '--stack-name', settings_json['CloudFormation']['stack_name'], 
      '--template-body', f'file://{os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"])}', 
-     '--capabilities', 'CAPABILITY_IAM']
+     '--capabilities', 'CAPABILITY_NAMED_IAM']
   )
   print("Waiting for CloudFormation Stack update.")
   subprocess.run(
     ['aws', 'cloudformation', 'wait', 'stack-update-complete', '--stack-name', settings_json['CloudFormation']['stack_name']]
   )
-  print("Finushed CloudFormation Stack update.")
+  print("Finished CloudFormation Stack update.")
 
 def cfn_delete(settings_json_path):
   if not input("Are you sure you want to delete the stack? (y/other): ") == "y":
@@ -188,7 +190,7 @@ def cfn_delete(settings_json_path):
   subprocess.run(
     ['aws', 'cloudformation', 'wait', 'stack-delete-complete', '--stack-name', settings_json['CloudFormation']['stack_name']]
   )
-  print("Finushed CloudFormation Stack delete.")
+  print("Finished CloudFormation Stack delete.")
 
 if __name__ == '__main__':
   main()

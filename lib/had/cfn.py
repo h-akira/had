@@ -283,9 +283,15 @@ def gen_yaml(settings_json_path):
   for APP in settings.APPS:
     root_resource = APP["url"]
     urls = importlib.import_module(f"{APP['name']}.urls")
+    exist_name = []
     for urlpattern in urls.urlpatterns:
+      if urlpattern["name"] in exist_name:
+        raise ValueError(f"Duplicate name: {urlpattern['name']}")
+      exist_name.append(urlpattern["name"])
       URL = os.path.join(root_resource,urlpattern["url"])
-      if URL[-1] == "/":
+      if URL == "":
+        URL_SPLIT = [""]
+      elif URL[-1] == "/":
         URL_SPLIT=URL[:-1].split("/")
       else:
         URL_SPLIT=URL.split("/")

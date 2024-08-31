@@ -131,9 +131,6 @@ settings_json_init = """\
     "directory":"build/handlers",
     "version":"latest"
   }},
-  "templates":{{
-    "directory":"build/templates"
-  }},
   "S3":{{
     "bucket":"{s3_bucket}",
     "key":"had"
@@ -246,15 +243,18 @@ def start_project():
   with open(os.path.join(project_name, "latest_version.json"), "w") as f:
     json.dump(latest_version_init, f, indent=2)
   os.makedirs(os.path.join(project_name, "build/handlers"))
-  os.makedirs(os.path.join(project_name, "build/static"))
   os.makedirs(os.path.join(project_name, "build/project/templates"))
-  os.makedirs(os.path.join(project_name, "build/project/python/lib/pyton{}/site-packages/project".format(python_version)))
+  os.makedirs(os.path.join(project_name, "build/project/python/lib/python{}/site-packages/project".format(python_version)))
   os.makedirs(os.path.join(project_name, "build/external/python/lib/python{}/site-packages".format(python_version)))
   os.symlink(
-    "build/project/python/lib/pyton{}/site-packages".format(python_version), 
+    "build/project/python/lib/python{}/site-packages".format(python_version), 
     os.path.join(project_name, project_name)
   )
-  with open(os.path.join(project_name, "build/project/python/lib/pyton{}/site-packages/project/settings.py".format(python_version)), "w") as f:
+  os.symlink(
+    "build/project/templates", 
+    os.path.join(project_name, "templates")
+  )
+  with open(os.path.join(project_name, "build/project/python/lib/python{}/site-packages/project/settings.py".format(python_version)), "w") as f:
     f.write(
       settings_py_init.format(
         project_name=project_name,
