@@ -90,6 +90,14 @@ if [ $1 = "install" ]; then
   else
     pip install $2 -t $WHERE
   fi
+elif [ $1 = "install2" ]; then
+  if [ $2 = "-r" ]; then
+    pip install -r $3 -t $WHERE
+    pip install -r $3
+  else
+    pip install $2 -t $WHERE
+    pip install $2
+  fi
 else
   pip $@
 fi
