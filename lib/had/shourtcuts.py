@@ -66,7 +66,7 @@ def render(request, template, context={}):
     return {
       "statusCode": 200,
       "headers": {
-        "Content-Type": "text/html",
+        "Content-Type": "text/html; charset=UTF-8"
       },
       "multiValueHeaders": {
         "Set-Cookie": request.get_cookies_to_refresh()
@@ -77,7 +77,7 @@ def render(request, template, context={}):
     return {
       "statusCode": 200,
       "headers": {
-        "Content-Type": "text/html"
+        "Content-Type": "text/html; charset=UTF-8"
       },
       "body": template.render(**context)
     }
@@ -105,7 +105,7 @@ def error_render(request=None, error_message=None):
     return {
       "statusCode": 500,
       "headers": {
-        "Content-Type": "text/html"
+        "Content-Type": "text/html; charset=UTF-8"
       },
       "body": error_html.format(error_message=error_message, event="None", context="None")
     }
@@ -113,7 +113,7 @@ def error_render(request=None, error_message=None):
     return {
       "statusCode": 500,
       "headers": {
-        "Content-Type": "text/html"
+        "Content-Type": "text/html; charset=UTF-8"
       },
       "body": error_html.format(error_message=error_message, event=request.event, context=request.context)
     }
