@@ -10,7 +10,7 @@ except ModuleNotFoundError:
 # class TemplageDoesNotExist(Exception):
 #   pass
 
-def get_url(app_name, **kwargs):
+def reverse(app_name, **kwargs):
   from project import settings
   if app_name.count(":") != 1:
     raise ValueError("App name should be in the format `app_name:url_name`")
@@ -33,7 +33,7 @@ def redirect(app_name, set_cookie=None, **kwargs):
     return {
       "statusCode": 302,
       "headers": {
-        "Location": get_url(app_name, **kwargs),
+        "Location": reverse(app_name, **kwargs),
         # "Set-Cookie": set_cookie
       },
       "multiValueHeaders": {
@@ -44,7 +44,7 @@ def redirect(app_name, set_cookie=None, **kwargs):
     return {
       "statusCode": 302,
       "headers": {
-        "Location": get_url(app_name, **kwargs)
+        "Location": reverse(app_name, **kwargs)
       }
     }
 
@@ -57,7 +57,7 @@ def render(request, template, context={}):
   env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(templates_dir)
   )
-  env.filters['url'] = get_url
+  env.filters['url'] = reverse
   template = env.get_template(template)
   if "request" not in context.keys():
     context["request"] = request

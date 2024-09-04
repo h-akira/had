@@ -82,8 +82,8 @@ def gen_handlers(settings_json_path):
       shutil.rmtree(handler_dir)
     # print(EXIST_HANDLERS)
     for EXIST_HANDLER in EXIST_HANDLERS:
-      print(f"Remove directory: {os.path.join(CURRENT_DIR, settings_json['handlers']['directory'], APP['name'], EXIST_HANDLER)}")
-      shutil.rmtree(os.path.join(CURRENT_DIR, settings_json["handlers"]["directory"], APP["name"], EXIST_HANDLER))
+      print(f"Remove file: {os.path.join(CURRENT_DIR, settings_json['handlers']['directory'], APP['name'], EXIST_HANDLER)}")
+      os.remove(os.path.join(CURRENT_DIR, settings_json["handlers"]["directory"], APP["name"], EXIST_HANDLER))
   for EXIST_APP in EXIST_APPS:
     print(f"Remove directory: {os.path.join(CURRENT_DIR, settings_json['handlers']['directory'], EXIST_APP)}")
     shutil.rmtree(os.path.join(CURRENT_DIR, settings_json["handlers"]["directory"], EXIST_APP))
