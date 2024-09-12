@@ -24,7 +24,7 @@ def reverse(app_name, **kwargs):
   urls = importlib.import_module(f"{app}.urls")
   for urlpattern in urls.urlpatterns:
     if urlpattern["name"] == name:
-      return "/" + os.path.join(settings.AWS["API Gateway"]["stage"], app_url, urlpattern["url"].format(**kwargs))
+      return "/" + os.path.join(settings.MAPPING_PATH, app_url, urlpattern["url"].format(**kwargs))
   else:
     raise ValueError(f"URL `{name}` does not exist in app `{app}`")
 

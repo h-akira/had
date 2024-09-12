@@ -163,6 +163,7 @@ PYTHON_VERSION = '{python_version}'
 # LOGOUT_REDIRECT_URL = "XXXXX:XXXXX"  
 LOCAL = False
 LOCAL_TEMPLATES = "build/templates"
+MAPPING_PATH = ""  # URL Mapping Path (if you don't use custom domain, this is stage name)
 AWS = {{
   "account": "{account}",
   "region": "ap-northeast-1",
@@ -173,8 +174,7 @@ AWS = {{
       "policy":{{
         "name":"policy-{stack}-{environment}-api2s3"
       }}
-    }},
-    "stage": "stage-01",
+    }}
   }},
   "Lambda":{{
     "prefix":"lambda-{stack}-{environment}",
