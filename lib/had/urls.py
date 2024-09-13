@@ -9,7 +9,7 @@ def path(url, function=None, name=None, methods=['GET'], role=None, integration=
   for method in methods:
     if method not in ['GET', 'POST']:
       raise ValueError('Invalid method: {}'.format(method))
-  if integration not in ['lambda', 's3']:
+  if integration.lower() not in ['lambda', 's3', 'cloudformation']:
     raise ValueError('Invalid integration: {}'.format(integration))
   # if integration == 's3' and path is None:
   #   raise ValueError('bucket_key is required')

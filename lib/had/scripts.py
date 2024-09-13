@@ -65,6 +65,8 @@ def gen_handlers(settings_json_path):
         print(f"Error: {os.path.join(CURRENT_DIR, settings_json['handlers']['directory'], APP['name'], EXIST_HANDLER)} is not a zip file.")
         raise Exception
     for urlpattern in urls.urlpatterns:
+      if urlpattern["integration"].lower() != "lambda":
+        continue
       handler_dir = os.path.join(CURRENT_DIR, settings_json["handlers"]["directory"], APP["name"], urlpattern['name'])
       handler_path = os.path.join(handler_dir, "lambda_function.py")
       if urlpattern["name"]+".zip" in EXIST_HANDLERS:

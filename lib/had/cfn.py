@@ -153,12 +153,6 @@ Resources:
             Service: "apigateway.amazonaws.com"
           Sid: ""
 
-  # API Gateway REST APIの作成
-  MyApiGateway:
-    Type: 'AWS::ApiGateway::RestApi'
-    Properties:
-      Name: '{api_name}'
-  
   # Lambda Layerの作成
   LambdaLayerExternal:
     Type: "AWS::Lambda::LayerVersion"
@@ -181,6 +175,39 @@ Resources:
         S3Key: "{S3_KEY}/layers/project/v{project_version:04d}.zip"
       CompatibleRuntimes: 
         - "python{PYTHON_VERSION}"
+  
+  # API Gateway REST APIの作成
+  MyApiGateway:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: '{api_name}'
+"""
+
+RESOURCE_POLICY = """\
+      Policy: 
+        Fn::Sub: |
+          {{
+            "Version": "2012-10-17",
+            "Statement": [
+              {{
+                "Effect": "Deny",
+                "Principal": "*",
+                "Action": "execute-api:Invoke",
+                "Resource": "arn:aws:execute-api:${{AWS::Region}}:${{AWS::AccountId}}:${{MyApiGateway}}/*/*/*",
+                "Condition": {{
+                  "StringNotEquals": {{
+                    "aws:Referer": "{REFERER}"
+                  }}
+                }}
+              }},
+              {{
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "execute-api:Invoke",
+                "Resource": "arn:aws:execute-api:${{AWS::Region}}:${{AWS::AccountId}}:${{MyApiGateway}}/*/*/*"
+              }}
+            ]
+          }}
 """
 
 # DEPLOYMENT = """\
@@ -244,6 +271,11 @@ def gen_yaml(settings_json_path):
     userPoolID=settings.AWS["cognito"]["userPoolID"],
     PYTHON_VERSION=settings.PYTHON_VERSION
   )
+  # CloudFrontからしかアクセスできないようにする場合
+  if settings.RESOURCE_POLICY:
+    YAML += RESOURCE_POLICY.format(
+      REFERER=settings.REFERER
+    )
 
   # Lambdaを追加
   lambda_list=[]
@@ -283,8 +315,11 @@ def gen_yaml(settings_json_path):
   for APP in settings.APPS:
     root_resource = APP["url"]
     urls = importlib.import_module(f"{APP['name']}.urls")
+
     exist_name = []
     for urlpattern in urls.urlpatterns:
+      if urlpattern["integration"].lower() == "cloudformation":
+        continue
       if urlpattern["name"] in exist_name:
         raise ValueError(f"Duplicate name: {urlpattern['name']}")
       exist_name.append(urlpattern["name"])
@@ -325,7 +360,7 @@ def gen_yaml(settings_json_path):
           # ResourceId = "!Ref MyResource" + str(resource_list.index(resource))
           ResourceId = "!Ref MyResource" + resource2index(resource)
         for method in urlpattern["methods"]:
-          if urlpattern["integration"] == "s3":
+          if urlpattern["integration"].lower() == "s3":
             DIC=urlpattern["function"]()
             if len(DIC["parameters"]) > 0:
               RequestParameters = "RequestParameters:\n"
@@ -346,7 +381,7 @@ def gen_yaml(settings_json_path):
               CONTENT_TYPE=DIC["content_type"],
               method_index = resource2index(resource) + method2index(method)
             )
-          elif urlpattern["integration"] == "lambda":
+          elif urlpattern["integration"].lower() == "lambda":
             YAML += APIGW_METHOD_LAMBDA.format(
               HttpMethod=method,
               ResourceId=ResourceId,
@@ -356,6 +391,8 @@ def gen_yaml(settings_json_path):
               index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
               method_index = resource2index(resource) + method2index(method)
             )
+          elif urlpattern["integration"].lower() == "cloudformation":
+            pass
           else:
             raise ValueError(f"Invalid integration: {urlpattern['integration']}")
   # YAML += DEPLOYMENT.format(
