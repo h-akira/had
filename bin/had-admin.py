@@ -18,6 +18,7 @@ def parse_args():
   parser.add_argument("-d", "--cfn-delete", metavar="settings-json", help="delete cludformation stack")
   parser.add_argument("-c", "--cfn-create", metavar="settings-json", help="create cludformation stack")
   parser.add_argument("-Y", "--generate-cfn-yaml", metavar="settings-json", help="settings.json file")
+  parser.add_argument("-A", "--generate-cfn-yaml-add", metavar="yaml-file", help="yaml file to add to the generated yaml file")
   parser.add_argument("-H", "--generate-handlers", metavar="settings-json", help="settings.json file")
   parser.add_argument("-a", "--handlers2s3", metavar="settings-json", help="settings.json file")
   parser.add_argument("-p", "--project2s3", metavar="settings-json", help="settings.json file")
@@ -59,7 +60,7 @@ def main():
   elif options.generate_cfn_yaml:
     print("===== Generate CloudFormation YAML =====")
     from had.cfn import gen_yaml
-    gen_yaml(options.generate_cfn_yaml)
+    gen_yaml(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
   elif options.generate_handlers:
     print("===== Generate Handlers =====")
     from had.scripts import gen_handlers

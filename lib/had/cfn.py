@@ -183,33 +183,6 @@ Resources:
       Name: '{api_name}'
 """
 
-RESOURCE_POLICY = """\
-      Policy: 
-        Fn::Sub: |
-          {{
-            "Version": "2012-10-17",
-            "Statement": [
-              {{
-                "Effect": "Deny",
-                "Principal": "*",
-                "Action": "execute-api:Invoke",
-                "Resource": "arn:aws:execute-api:${{AWS::Region}}:${{AWS::AccountId}}:${{MyApiGateway}}/*/*/*",
-                "Condition": {{
-                  "StringNotEquals": {{
-                    "aws:Referer": "{REFERER}"
-                  }}
-                }}
-              }},
-              {{
-                "Effect": "Allow",
-                "Principal": "*",
-                "Action": "execute-api:Invoke",
-                "Resource": "arn:aws:execute-api:${{AWS::Region}}:${{AWS::AccountId}}:${{MyApiGateway}}/*/*/*"
-              }}
-            ]
-          }}
-"""
-
 # DEPLOYMENT = """\
 #   MyApiDeployment:
 #     Type: 'AWS::ApiGateway::Deployment'
@@ -243,9 +216,12 @@ def lambdaname2index(lambdaname):
 def method2index(method):
   return method.replace("GET","QQQxq").replace("POST","XqQQQQXQq")
 
-def gen_yaml(settings_json_path):
+def gen_yaml(settings_json_path, yaml_add=None):
   with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
+  if yaml_add is not None: 
+    with open(yaml_add, "r") as f:
+      yaml_add = f.read()
   CURRENT_DIR = os.path.dirname(settings_json_path)
   with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
     versions = json.load(f)
@@ -271,11 +247,6 @@ def gen_yaml(settings_json_path):
     userPoolID=settings.AWS["cognito"]["userPoolID"],
     PYTHON_VERSION=settings.PYTHON_VERSION
   )
-  # CloudFrontからしかアクセスできないようにする場合
-  if settings.RESOURCE_POLICY:
-    YAML += RESOURCE_POLICY.format(
-      REFERER=settings.REFERER
-    )
 
   # Lambdaを追加
   lambda_list=[]
@@ -398,6 +369,8 @@ def gen_yaml(settings_json_path):
   # YAML += DEPLOYMENT.format(
   #   StageName=settings.AWS["API Gateway"]["stage"]
   # )
+  if yaml_add is not None:
+    YAML += "\n" + yaml_add
   with open(settings_json["CloudFormation"]["template"], "w") as f:
     f.write(YAML)
   print("Complete!")
