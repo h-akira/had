@@ -2,6 +2,8 @@ import sys
 import os
 import json
 import shutil
+import datetime
+from zoneinfo import ZoneInfo
 import importlib
 import subprocess
 
@@ -148,10 +150,11 @@ def cfn_create(settings_json_path):
   with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
   CURRENT_DIR = os.path.dirname(settings_json_path)
+  s3_url = _upload_yaml_to_s3(os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"]), settings_json)
   # スタックの作成
   subprocess.run(
     ['aws', 'cloudformation', 'create-stack', '--stack-name', settings_json['CloudFormation']['stack_name'], 
-     '--template-body', f'file://{os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"])}', 
+     '--template-url', s3_url, 
      '--capabilities', 'CAPABILITY_NAMED_IAM']
   )
   print("Waiting for CloudFormation Stack create.")
@@ -166,10 +169,11 @@ def cfn_update(settings_json_path):
   with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
   CURRENT_DIR = os.path.dirname(settings_json_path)
+  s3_url = _upload_yaml_to_s3(os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"]), settings_json)
   # スタックの更新
   subprocess.run(
     ['aws', 'cloudformation', 'update-stack', '--stack-name', settings_json['CloudFormation']['stack_name'], 
-     '--template-body', f'file://{os.path.join(CURRENT_DIR, settings_json["CloudFormation"]["template"])}', 
+     '--template-url', s3_url, 
      '--capabilities', 'CAPABILITY_NAMED_IAM']
   )
   print("Waiting for CloudFormation Stack update.")
@@ -193,6 +197,15 @@ def cfn_delete(settings_json_path):
     ['aws', 'cloudformation', 'wait', 'stack-delete-complete', '--stack-name', settings_json['CloudFormation']['stack_name']]
   )
   print("Finished CloudFormation Stack delete.")
+
+
+def _upload_yaml_to_s3(local_file, settings_json):
+  s3_key = os.path.join(settings_json['S3']['key'],"CloudFormation", f"{datetime.datetime.now(ZoneInfo('Asia/Tokyo')).strftime('%Y%m%d%H%M%S')}.yaml")
+  subprocess.run(
+    ['aws', 's3', 'cp', local_file, f's3://{settings_json["S3"]["bucket"]}/{s3_key}']
+  )
+  s3_url = f'https://{settings_json["S3"]["bucket"]}.s3.{settings_json["region"]}.amazonaws.com/{s3_key}'
+  return s3_url
 
 if __name__ == '__main__':
   main()

@@ -48,17 +48,30 @@ def redirect(app_name, set_cookie=None, **kwargs):
       }
     }
 
-def render(request, template, context={}):
-  from project import settings
-  if settings.LOCAL:
-    templates_dir = os.path.join(settings.BASE_DIR, "templates")
-  else:
-    templates_dir = "/opt/templates"
+class RenderSettings:
+  # from project import settings
+  # if settings.LOCAL:
+  #   templates_dir = os.path.join(settings.BASE_DIR, "templates")
+  # else:
+  #   templates_dir = "/opt/templates"
+  templates_dir = "/opt/templates"
   env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(templates_dir)
   )
   env.filters['url'] = reverse
-  template = env.get_template(template)
+
+def render(request, template, context={}):
+  # from project import settings
+  # if settings.LOCAL:
+  #   templates_dir = os.path.join(settings.BASE_DIR, "templates")
+  # else:
+  #   templates_dir = "/opt/templates"
+  # env = jinja2.Environment(
+  #   loader=jinja2.FileSystemLoader(templates_dir)
+  # )
+  # env.filters['url'] = reverse
+  # template = env.get_template(template)
+  template = RenderSettings.env.get_template(template)
   if "request" not in context.keys():
     context["request"] = request
   if request.refresh:

@@ -115,6 +115,7 @@ settings_json_init = """\
   "name": "{project_name}",
   "stack":"{stack_name}",
   "environment":"{environment}",
+  "region":"ap-northeast-1",
   "target":"build/project/python/lib/python{python_version}/site-packages",
   "layer":{{
     "name":"layer-{stack_name}-project",
