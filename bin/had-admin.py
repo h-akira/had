@@ -31,21 +31,38 @@ def parse_args():
   #   raise Exception("The input file does not exist.") 
   return options
 
-# def project_path_append(settings_json_path):
-#   with open(settings_json_path) as f:
-#     settings_json = json.load(f)
-#   CURRENT_DIR = os.path.dirname(settings_json_path)
-#   sys.path.append(
-#     os.path.join(CURRENT_DIR, settings_json["layer"]["directory"], settings_json["layer"]["path"])
-#   )
-
 def main():
   options = parse_args()
   if options.start_project:
     print("===== Start Project =====")
     from had.start import start_project
     start_project()
-  elif options.cfn_update:
+    sys.exit()
+
+  # 複数実行可能
+  if options.generate_handlers:
+    print("===== Generate Handlers =====")
+    from had.scripts import gen_handlers
+    gen_handlers(options.generate_handlers)
+  if options.handlers2s3:
+    print("===== Handlers to S3 =====")
+    from had.scripts import handlers2s3
+    handlers2s3(options.handlers2s3)
+  if options.project2s3:
+    print("===== Project to S3 =====")
+    from had.scripts import layers2s3
+    layers2s3(options.project2s3, project_upload=True)
+  if options.external2s3:
+    print("===== External to S3 =====")
+    from had.scripts import layers2s3
+    layers2s3(options.external2s3, external_upload=True)
+  if options.generate_cfn_yaml:
+    print("===== Generate CloudFormation YAML =====")
+    from had.cfn import gen_yaml
+    gen_yaml(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
+
+  # どれか一つだけ実行可能
+  if options.cfn_update:
     print("===== Update CloudFormation =====")
     from had.scripts import cfn_update
     cfn_update(options.cfn_update)
@@ -57,27 +74,6 @@ def main():
     print("===== Create CloudFormation =====")
     from had.scripts import cfn_create
     cfn_create(options.cfn_create)
-  elif options.generate_cfn_yaml:
-    print("===== Generate CloudFormation YAML =====")
-    from had.cfn import gen_yaml
-    gen_yaml(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
-  elif options.generate_handlers:
-    print("===== Generate Handlers =====")
-    from had.scripts import gen_handlers
-    gen_handlers(options.generate_handlers)
-  else:
-    if options.handlers2s3:
-      print("===== Handlers to S3 =====")
-      from had.scripts import handlers2s3
-      handlers2s3(options.handlers2s3)
-    if options.project2s3:
-      print("===== Project to S3 =====")
-      from had.scripts import layers2s3
-      layers2s3(options.project2s3, project_upload=True)
-    if options.external2s3:
-      print("===== External to S3 =====")
-      from had.scripts import layers2s3
-      layers2s3(options.external2s3, external_upload=True)
 
 if __name__ == '__main__':
   main()

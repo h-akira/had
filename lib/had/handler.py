@@ -2,7 +2,6 @@ import jwt
 from jwt import PyJWKClient
 from datetime import datetime
 import urllib.parse
-from had.shourtcuts import error_render
 from http.cookies import SimpleCookie
 
 class RequestClass:
@@ -110,7 +109,6 @@ class RequestClass:
         self.username = self.decoded_token.get('cognito:username', None)
       except:
         # import traceback
-        # return error_render(None, traceback.format_exc())
         self.auth = False
         self.username = None
         # self.error = "Expire and failed to refresh: " + traceback.format_exc()

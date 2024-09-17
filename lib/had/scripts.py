@@ -36,6 +36,7 @@ def lambda_handler(event, context):
       return {function}(request, **pathParameters)
     else:
       return {function}(request)
+    return error_render(None, time_list)
   except Exception as e:
     return error_render(request, traceback.format_exc())"""
 
