@@ -1,16 +1,8 @@
 import os
-import jinja2
-import importlib
 from http.cookies import SimpleCookie
-try:
-  import boto3
-except ModuleNotFoundError:
-  print("Boto3 is not installed. Please install boto3 using 'pip install boto3'")
-
-# class TemplageDoesNotExist(Exception):
-#   pass
 
 def reverse(app_name, **kwargs):
+  import importlib
   from project import settings
   if app_name.count(":") != 1:
     raise ValueError("App name should be in the format `app_name:url_name`")
@@ -49,11 +41,7 @@ def redirect(app_name, set_cookie=None, **kwargs):
     }
 
 class RenderSettings:
-  # from project import settings
-  # if settings.LOCAL:
-  #   templates_dir = os.path.join(settings.BASE_DIR, "templates")
-  # else:
-  #   templates_dir = "/opt/templates"
+  import jinja2
   templates_dir = "/opt/templates"
   env = jinja2.Environment(
     loader=jinja2.FileSystemLoader(templates_dir)
@@ -61,16 +49,6 @@ class RenderSettings:
   env.filters['url'] = reverse
 
 def render(request, template, context={}):
-  # from project import settings
-  # if settings.LOCAL:
-  #   templates_dir = os.path.join(settings.BASE_DIR, "templates")
-  # else:
-  #   templates_dir = "/opt/templates"
-  # env = jinja2.Environment(
-  #   loader=jinja2.FileSystemLoader(templates_dir)
-  # )
-  # env.filters['url'] = reverse
-  # template = env.get_template(template)
   template = RenderSettings.env.get_template(template)
   if "request" not in context.keys():
     context["request"] = request
@@ -130,5 +108,4 @@ def error_render(request=None, error_message=None):
       },
       "body": error_html.format(error_message=error_message, event=request.event, context=request.context)
     }
-
 

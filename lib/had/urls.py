@@ -11,10 +11,6 @@ def path(url, function=None, name=None, methods=['GET'], role=None, integration=
       raise ValueError('Invalid method: {}'.format(method))
   if integration.lower() not in ['lambda', 's3', 'cloudformation']:
     raise ValueError('Invalid integration: {}'.format(integration))
-  # if integration == 's3' and path is None:
-  #   raise ValueError('bucket_key is required')
-  # if integration == 'lambda' and function is None:
-  #   raise ValueError('function is required')
   return {
     'url': url,
     'function': function,
@@ -36,10 +32,3 @@ def urlpatterns_checker(urlpatterns):
   if len(names) != len(set(names)):
     raise ValueError('Duplicate name: {}'.format(names))
   return True
-
-# urlpatterns = [
-#   path('/hello/{aaa}/{bbb}', 'hello', 'hello', ['GET']),
-#   path('/world', 'world', 'world', ['POST']),
-# ]
-#
-# urlpatterns_checker(urlpatterns)

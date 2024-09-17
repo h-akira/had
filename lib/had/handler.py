@@ -4,10 +4,6 @@ from datetime import datetime
 import urllib.parse
 from had.shourtcuts import error_render
 from http.cookies import SimpleCookie
-try:
-  import boto3
-except ModuleNotFoundError:
-  pass
 
 class RequestClass:
   def __init__(self, event, context):
@@ -17,18 +13,6 @@ class RequestClass:
     self._set_method()
     self._set_parsed_body(self.method)
     self._set_auth()  # self.authとself.username
-  # def body_get(self, key, allow_list=True):
-  #   try:
-  #     if len(self.body[key]) > 1:
-  #       if not allow_list:
-  #         raise Exception(f"Key {key} has multiple values.")
-  #       return self.body[key]
-  #     else:
-  #       return self.body[key][0]
-  #   except KeyError:
-  #     return None
-  # def get_body_no_list(self):
-  #   return {key: self.body_get(key, allow_list=False) for key in self.body}
   def get_cookies_to_refresh(self):
     cookie = SimpleCookie()
     cookie['id_token'] = self.id_token
@@ -100,8 +84,7 @@ class RequestClass:
       self.auth = True
       self.username = self.decoded_token.get('cognito:username', None)
     except jwt.ExpiredSignatureError:
-      # self.auth = False
-      # self.username = None
+      import boto3
       client = boto3.client('cognito-idp')
       try:
         response = client.initiate_auth(
