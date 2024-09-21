@@ -178,7 +178,7 @@ AWS = {{
     }}
   }},
   "Lambda":{{
-    "prefix":"lambda-{stack}-{environment}",
+    "prefix":"{stack}-{environment}-lambda",
     "role":{{
       "name":"role-{stack}-{environment}-lambda-common",
     }}
