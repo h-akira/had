@@ -31,12 +31,13 @@ HogeProject
 └── templates -> build/project/templates
 ```
 ### 各ファイルの説明
-- `HogeProject`
-    - シンボリックリンク（`build/project/python/lib/python3.12/site-packages`）
-    - 開発時に直接操作されるため配置
-- `build/external/python/lib/python3.12/site-packages`
-    - 外部ライブラリの格納先
-    - `pip.sh`を用いてインストールするとここに格納される
+#### `HogeProject`
+- シンボリックリンク（`build/project/python/lib/python3.12/site-packages`）
+- 開発時に直接操作されるため配置
+#### `build/external/python/lib/python3.12/site-packages`
+- 外部ライブラリの格納先
+- `pip.sh`を用いてインストールするとここに格納される
+
 - `build/handlers`
     - Lambdaのhandlerの格納先
     - `had-admin.py -H settings.py`を実行すると各関数が自動で生成、格納される
