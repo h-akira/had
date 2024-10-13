@@ -289,7 +289,7 @@ def gen_yaml(settings_json_path, yaml_add=None):
 
     exist_name = []
     for urlpattern in urls.urlpatterns:
-      if urlpattern["integration"].lower() == "cloudformation":
+      if urlpattern["integration"].lower() == "cloudfront":
         continue
       if urlpattern["name"] in exist_name:
         raise ValueError(f"Duplicate name: {urlpattern['name']}")
@@ -362,7 +362,7 @@ def gen_yaml(settings_json_path, yaml_add=None):
               index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
               method_index = resource2index(resource) + method2index(method)
             )
-          elif urlpattern["integration"].lower() == "cloudformation":
+          elif urlpattern["integration"].lower() == "cloudfront":
             pass
           else:
             raise ValueError(f"Invalid integration: {urlpattern['integration']}")

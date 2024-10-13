@@ -9,7 +9,7 @@ def path(url, function=None, name=None, methods=['GET'], role=None, integration=
   for method in methods:
     if method not in ['GET', 'POST']:
       raise ValueError('Invalid method: {}'.format(method))
-  if integration.lower() not in ['lambda', 's3', 'cloudformation']:
+  if integration.lower() not in ['lambda', 's3', 'cloudfront']:
     raise ValueError('Invalid integration: {}'.format(integration))
   return {
     'url': url,
