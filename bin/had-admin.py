@@ -17,6 +17,7 @@ def parse_args():
   parser.add_argument("-u", "--cfn-update", metavar="settings-json", help="update cludformation stack")
   parser.add_argument("-d", "--cfn-delete", metavar="settings-json", help="delete cludformation stack")
   parser.add_argument("-c", "--cfn-create", metavar="settings-json", help="create cludformation stack")
+  parser.add_argument("-x", "--cfn-exists", metavar="settings-json", help="check if cludformation stack exists")
   parser.add_argument("-Y", "--generate-cfn-yaml", metavar="settings-json", help="settings.json file")
   parser.add_argument("-A", "--generate-cfn-yaml-add", metavar="yaml-file", help="yaml file to add to the generated yaml file")
   parser.add_argument("-H", "--generate-handlers", metavar="settings-json", help="settings.json file")
@@ -74,6 +75,10 @@ def main():
     print("===== Create CloudFormation =====")
     from had.scripts import cfn_create
     cfn_create(options.cfn_create)
+  elif options.cfn_exists:
+    print("===== Check CloudFormation =====")
+    from had.scripts import cfn_exists
+    cfn_exists(options.cfn_exists)
 
 if __name__ == '__main__':
   main()

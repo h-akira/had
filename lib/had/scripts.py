@@ -199,6 +199,23 @@ def cfn_delete(settings_json_path):
   )
   print("Finished CloudFormation Stack delete.")
 
+def cfn_exists(settings_json_path):
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  # スタックの存在確認
+  try:
+    subprocess.run(
+      ['aws', 'cloudformation', 'describe-stacks', '--stack-name', settings_json['CloudFormation']['stack_name']],
+      check=True,
+      stdout=subprocess.PIPE,
+      stderr=subprocess.PIPE
+    )
+    print("The stack exists.")
+  except subprocess.CalledProcessError:
+    if "does not exist" in e.stderr.decode():
+      raise Exception("The stack does not exist.")
+    else:
+      raise Exception(f"An error occurred: {e.stderr.decode()}")
 
 def _upload_yaml_to_s3(local_file, settings_json):
   s3_key = os.path.join(settings_json['S3']['key'],"CloudFormation", f"{datetime.datetime.now(ZoneInfo('Asia/Tokyo')).strftime('%Y%m%d%H%M%S')}.yaml")
