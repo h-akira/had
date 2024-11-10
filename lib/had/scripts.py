@@ -31,14 +31,19 @@ def lambda_handler(event, context):
     pathParameters = event["pathParameters"]
   except KeyError:
     pathParameters = False
-  try:
+  if settings.DEBUG:
+    try:
+      if pathParameters:
+        return {function}(request, **pathParameters)
+      else:
+        return {function}(request)
+    except Exception as e:
+      return error_render(request, traceback.format_exc())
+  else:
     if pathParameters:
       return {function}(request, **pathParameters)
     else:
-      return {function}(request)
-    return error_render(None, time_list)
-  except Exception as e:
-    return error_render(request, traceback.format_exc())"""
+      return {function}(request)"""
 
 def gen_handlers(settings_json_path):
   with open(settings_json_path, "r") as f:
