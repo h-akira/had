@@ -48,27 +48,29 @@ class RenderSettings:
   )
   env.filters['url'] = reverse
 
-def json_render(request, dictionary):
+def json_render(request, body, code=200):
   import json
   if request.refresh:
     # CookieにJWTトークンをセット
     return {
-      "statusCode": 200,
+      "statusCode": code,
       "headers": {
         "Content-Type": "application/json; charset=UTF-8"
       },
       "multiValueHeaders": {
         "Set-Cookie": request.get_cookies_to_refresh()
       },
-      "body": json.dumps(dictionary)
+      "body": json.dumps(body)
+      # "body": body
     }
   else:
     return {
-      "statusCode": 200,
+      "statusCode": code,
       "headers": {
         "Content-Type": "application/json; charset=UTF-8"
       },
-      "body": json.dumps(dictionary)
+      "body": json.dumps(body)
+      # "body": body
     }
 
 def render(request, template, context={}):
