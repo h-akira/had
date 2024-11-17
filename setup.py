@@ -7,7 +7,7 @@ def requirements_from_file(file_name):
 
 setup(
   name='had',
-  version='1.0.2',
+  version='1.0.3',
   package_dir={"":"lib"},
   packages=find_packages(where="lib"),
   scripts=glob.glob("bin/*.py"),
