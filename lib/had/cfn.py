@@ -32,7 +32,7 @@ LAMBDA_PERMISSION = """\
       Action: 'lambda:InvokeFunction'
       Principal: 'apigateway.amazonaws.com'
       SourceArn: !Sub
-        arn:aws:execute-api:${{AWS::Region}}:${{AWS::AccountId}}:${{MyApiGateway}}/*/{method}/{myresource}
+        arn:aws:execute-api:${{AWS::Region}}:${{AWS::AccountId}}:${{MyApiGateway{apigw_index}}}/*/{method}/{myresource}
 """
 
 APIGW_METHOD_S3 = """\
@@ -42,7 +42,7 @@ APIGW_METHOD_S3 = """\
       AuthorizationType: 'NONE'
       HttpMethod: 'GET'
       ResourceId: {ResourceId}
-      RestApiId: !Ref MyApiGateway
+      RestApiId: !Ref MyApiGateway{apigw_index}
       RequestParameters:
         "method.request.path.item": true
       Integration:
@@ -70,7 +70,7 @@ APIGW_RESOURCE = """\
     Properties:
       ParentId: {ParentId}
       PathPart: "{PathPart}"
-      RestApiId: !Ref MyApiGateway
+      RestApiId: !Ref MyApiGateway{apigw_index}
 """
 
 APIGW_METHOD_LAMBDA= """\
@@ -80,7 +80,7 @@ APIGW_METHOD_LAMBDA= """\
       AuthorizationType: 'NONE'
       HttpMethod: '{HttpMethod}'
       ResourceId: {ResourceId}
-      RestApiId: !Ref MyApiGateway
+      RestApiId: !Ref MyApiGateway{apigw_index}
       Integration:
         IntegrationHttpMethod: 'POST'
         Type: 'AWS_PROXY'
@@ -175,12 +175,16 @@ Resources:
         S3Key: "{S3_KEY}/layers/project/v{project_version:04d}.zip"
       CompatibleRuntimes: 
         - "python{PYTHON_VERSION}"
-  
+"""
+APIGW = """\
   # API Gateway REST APIの作成
-  MyApiGateway:
+  MyApiGateway{index}:
     Type: 'AWS::ApiGateway::RestApi'
     Properties:
       Name: '{api_name}'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
 """
 
 # DEPLOYMENT = """\
@@ -216,6 +220,14 @@ def lambdaname2index(lambdaname):
 def method2index(method):
   return method.replace("GET","QQQxq").replace("POST","XqQQQQXQq")
 
+def apigw2index(apigw, gateways=None):
+  if apigw.__class__ is int:
+    if gateways is None:
+      raise ValueError("gateways is None")
+    else:
+      apigw = gateways[apigw]["name"]
+  return apigw.replace("-","Qx6QqX").replace("_","xQ4xXq")
+
 def gen_yaml(settings_json_path, yaml_add=None):
   with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
@@ -240,17 +252,36 @@ def gen_yaml(settings_json_path, yaml_add=None):
     external_version=versions["external"],
     layer_name_project=settings_json["layer"]["name"],
     layer_name_external=settings_json["pip"]["layer"]["name"],
-    api_name=settings.AWS["API Gateway"]["name"],
+    # api_name=settings.AWS["API Gateway"]["name"],
     role_lambda_name=settings.AWS["Lambda"]["role"]["name"],
-    role_apigw2s3_name=settings.AWS["API Gateway"]["role2s3"]["name"],
-    policy_apigw2s3_name=settings.AWS["API Gateway"]["role2s3"]["policy"]["name"],
+    role_apigw2s3_name=settings.AWS["API"]["role2s3"]["name"],
+    policy_apigw2s3_name=settings.AWS["API"]["role2s3"]["policy"]["name"],
     userPoolID=settings.AWS["cognito"]["userPoolID"],
     PYTHON_VERSION=settings.PYTHON_VERSION
   )
+  # API Gatewayを追加
+  for apigw in settings.AWS["API"]["gateways"]:
+    if apigw["override"]:
+      YAML += apigw["override"]
+    else:
+      YAML += APIGW.format(
+        index=apigw2index(apigw["name"]),
+        api_name=apigw["name"]
+      )
+      if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
+        YAML += f"""\
+      BinaryMediaTypes:
+"""
+        for binary_media_type in apigw["binary-media-types"]:
+          if binary_media_type == "*/*":
+            binary_media_type="'*/*'"
+          YAML += """\
+        - {}
+""".format(binary_media_type)
 
   # Lambdaを追加
   lambda_list=[]
-  lambda_permission_counter = 0
+  # lambda_permission_counter = 0
   for APP in settings.APPS:
     urls = importlib.import_module(f"{APP['name']}.urls")
     for urlpattern in urls.urlpatterns:
@@ -278,94 +309,103 @@ def gen_yaml(settings_json_path, yaml_add=None):
             # permission_index=lambda_permission_counter,
             permission_index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}") + method2index(method),
             myresource=myresource,
+            apigw_index=apigw2index(urlpattern["apigw"], settings.AWS["API"]["gateways"]),
             method=method
           )
-          lambda_permission_counter += 1
+          # lambda_permission_counter += 1
   # Resourceを作る
-  resource_list = [""]
-  for APP in settings.APPS:
-    root_resource = APP["url"]
-    urls = importlib.import_module(f"{APP['name']}.urls")
-
-    exist_name = []
-    for urlpattern in urls.urlpatterns:
-      if urlpattern["integration"].lower() == "cloudfront":
-        continue
-      if urlpattern["name"] in exist_name:
-        raise ValueError(f"Duplicate name: {urlpattern['name']}")
-      exist_name.append(urlpattern["name"])
-      URL = os.path.join(root_resource,urlpattern["url"])
-      if URL == "":
-        URL_SPLIT = [""]
-      elif URL[-1] == "/":
-        URL_SPLIT=URL[:-1].split("/")
-      else:
-        URL_SPLIT=URL.split("/")
-      resource = ""
-      for u in URL_SPLIT:
-        if u == "":
+  for i, apigw in enumerate(settings.AWS["API"]["gateways"]):
+    resource_list = [""]
+    for APP in settings.APPS:
+      root_resource = APP["url"]
+      urls = importlib.import_module(f"{APP['name']}.urls")
+      exist_name = []
+      for urlpattern in urls.urlpatterns:
+        if urlpattern["integration"].lower() == "cloudfront":
           continue
-        if resource == "":
-          resource += u
+        if urlpattern["apigw"].__class__ is int and urlpattern["apigw"] != i:
+          continue
+        elif urlpattern["apigw"].__class__ is str and urlpattern["apigw"] != apigw["name"]:
+          continue
+        if urlpattern["name"] in exist_name:
+          raise ValueError(f"Duplicate name: {urlpattern['name']}")
+        exist_name.append(urlpattern["name"])
+        URL = os.path.join(root_resource,urlpattern["url"])
+        if URL == "":
+          URL_SPLIT = [""]
+        elif URL[-1] == "/":
+          URL_SPLIT=URL[:-1].split("/")
         else:
-          resource += "/" + u
-        if resource not in resource_list:
-          resource_list.append(resource)
-          if "/" in resource:
-            parent_resource = "/".join(resource.split("/")[:-1])
-            # ParentId = "!Ref MyResource" + str(resource_list.index(parent_resource))
-            ParentId = "!Ref MyResource" + resource2index(parent_resource)
+          URL_SPLIT=URL.split("/")
+        resource = ""
+        for u in URL_SPLIT:
+          if u == "":
+            continue
+          if resource == "":
+            resource += u
           else:
-            ParentId = "!GetAtt MyApiGateway.RootResourceId"
-          YAML += APIGW_RESOURCE.format(
-            # index=resource_list.index(resource),
-            index=resource2index(resource),
-            ParentId=ParentId,
-            PathPart=u
-          )
-      else:
-        # methodを作る
-        if resource == "":
-          ResourceId = "!GetAtt MyApiGateway.RootResourceId"
-        else:
-          # ResourceId = "!Ref MyResource" + str(resource_list.index(resource))
-          ResourceId = "!Ref MyResource" + resource2index(resource)
-        for method in urlpattern["methods"]:
-          if urlpattern["integration"].lower() == "s3":
-            DIC=urlpattern["function"]()
-            if len(DIC["parameters"]) > 0:
-              RequestParameters = "RequestParameters:\n"
-              for key in DIC["parameters"]:
-                RequestParameters += """\
-          "integration.request.path.{key}": "method.request.path.{key}"
-""".format(key=key)
-              else:
-                RequestParameters += """\
-        """
+            resource += "/" + u
+          if resource not in resource_list:
+            resource_list.append(resource)
+            if "/" in resource:
+              parent_resource = "/".join(resource.split("/")[:-1])
+              # ParentId = "!Ref MyResource" + str(resource_list.index(parent_resource))
+              ParentId = "!Ref MyResource" + resource2index(parent_resource)
             else:
-              RequestParameters = ""
-            YAML += APIGW_METHOD_S3.format(
-              ResourceId=ResourceId,
-              S3_BUCKET=settings_json["S3"]["bucket"],
-              S3_KEY=os.path.join(settings_json["S3"]["key"], "integration", DIC["path"]),
-              RequestParameters=RequestParameters,
-              CONTENT_TYPE=DIC["content_type"],
-              method_index = resource2index(resource) + method2index(method)
+              ParentId = f"!GetAtt MyApiGateway{apigw2index(apigw['name'])}.RootResourceId"
+            YAML += APIGW_RESOURCE.format(
+              # index=resource_list.index(resource),
+              apigw_index=apigw2index(apigw["name"]),
+              index=resource2index(resource),
+              ParentId=ParentId,
+              PathPart=u
             )
-          elif urlpattern["integration"].lower() == "lambda":
-            YAML += APIGW_METHOD_LAMBDA.format(
-              HttpMethod=method,
-              ResourceId=ResourceId,
-              name=urlpattern["name"],
-              app=APP["name"],
-              # index=lambda_list.index(f"{APP['name']}:{urlpattern['name']}"),
-              index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
-              method_index = resource2index(resource) + method2index(method)
-            )
-          elif urlpattern["integration"].lower() == "cloudfront":
-            pass
+        else:
+          # methodを作る
+          if resource == "":
+            ResourceId = f"!GetAtt MyApiGateway{apigw2index(apigw['name'])}.RootResourceId"
           else:
-            raise ValueError(f"Invalid integration: {urlpattern['integration']}")
+            # ResourceId = "!Ref MyResource" + str(resource_list.index(resource))
+            ResourceId = "!Ref MyResource" + resource2index(resource)
+          for method in urlpattern["methods"]:
+            if urlpattern["integration"].lower() == "s3":
+              DIC=urlpattern["function"]()
+              if len(DIC["parameters"]) > 0:
+                RequestParameters = "RequestParameters:\n"
+                for key in DIC["parameters"]:
+                  RequestParameters += """\
+            "integration.request.path.{key}": "method.request.path.{key}"
+""".format(key=key)
+                else:
+                  RequestParameters += """\
+          """
+              else:
+                RequestParameters = ""
+              YAML += APIGW_METHOD_S3.format(
+                ResourceId=ResourceId,
+                S3_BUCKET=settings_json["S3"]["bucket"],
+                S3_KEY=os.path.join(settings_json["S3"]["key"], "integration", DIC["path"]),
+                RequestParameters=RequestParameters,
+                CONTENT_TYPE=DIC["content_type"],
+                apigw_index=apigw2index(apigw["name"]),
+                method_index = resource2index(resource) + method2index(method)
+              )
+            elif urlpattern["integration"].lower() == "lambda":
+              YAML += APIGW_METHOD_LAMBDA.format(
+                HttpMethod=method,
+                ResourceId=ResourceId,
+                name=urlpattern["name"],
+                apigw_index=apigw2index(apigw["name"]),
+                app=APP["name"],
+                # index=lambda_list.index(f"{APP['name']}:{urlpattern['name']}"),
+
+                index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
+                method_index = resource2index(resource) + method2index(method)
+              )
+            elif urlpattern["integration"].lower() == "cloudfront":
+              pass
+            else:
+              raise ValueError(f"Invalid integration: {urlpattern['integration']}")
   # YAML += DEPLOYMENT.format(
   #   StageName=settings.AWS["API Gateway"]["stage"]
   # )

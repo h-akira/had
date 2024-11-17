@@ -1,6 +1,6 @@
 import re
 
-def path(url, function=None, name=None, methods=['GET'], role=None, integration="lambda", login_required=False):
+def path(url, function=None, name=None, methods=['GET'], role=None, integration="lambda", login_required=False, apigw=0):
   if name is None:
     raise ValueError('name is required')
   # 大文字に変換
@@ -19,6 +19,7 @@ def path(url, function=None, name=None, methods=['GET'], role=None, integration=
     'role':role,
     'integration':integration,
     'login_required':login_required,
+    'apigw':apigw  # int型ならリストの番号、str柄ならnameを取る
   }
 
 def urlpatterns_checker(urlpatterns):

@@ -61,7 +61,6 @@ def json_render(request, body, code=200):
         "Set-Cookie": request.get_cookies_to_refresh()
       },
       "body": json.dumps(body)
-      # "body": body
     }
   else:
     return {
@@ -70,7 +69,33 @@ def json_render(request, body, code=200):
         "Content-Type": "application/json; charset=UTF-8"
       },
       "body": json.dumps(body)
-      # "body": body
+    }
+
+def image_render(request, image_body, content_type, isBase64Encoded=False, reflesh=False):
+  import json
+  if request.refresh and reflesh:
+    # CookieにJWTトークンをセット
+    return {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": content_type
+      },
+      "multiValueHeaders": {
+        "Set-Cookie": request.get_cookies_to_refresh()
+      },
+      # "body": json.dumps(image_body),
+      "body": image_body,
+      "isBase64Encoded": isBase64Encoded
+    }
+  else:
+    return {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": content_type
+      },
+      # "body": json.dumps(image_body),
+      "body": image_body,
+      "isBase64Encoded": isBase64Encoded
     }
 
 def render(request, template, context={}):
