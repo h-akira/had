@@ -168,14 +168,20 @@ MAPPING_PATH = ""  # URL Mapping Path (if you don't use custom domain, this is s
 AWS = {{
   "account": "{account}",
   "region": "ap-northeast-1",
-  "API Gateway":{{
-    "name":"api-{stack}-{environment}",
+  "API":{{
     "role2s3":{{
       "name":"role-{stack}-{environment}-api2s3",
       "policy":{{
         "name":"policy-{stack}-{environment}-api2s3"
       }}
-    }}
+    }},
+    "gateways":[
+      {{
+        "name":"api-{stack}-{environment}",
+        "override"::False,
+        "binary-media-types":[]
+      }}
+    ]
   }},
   "Lambda":{{
     "prefix":"{stack}-{environment}-lambda",
