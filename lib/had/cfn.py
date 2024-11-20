@@ -228,23 +228,35 @@ def apigw2index(apigw, gateways=None):
       apigw = gateways[apigw]["name"]
   return apigw.replace("-","Qx6QqX").replace("_","xQ4xXq")
 
-def gen_yaml(settings_json_path, yaml_add=None):
+def gen_yaml(settings_json_path, yaml_add=None, versions=None):
   with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
   if yaml_add is not None: 
     with open(yaml_add, "r") as f:
       yaml_add = f.read()
   CURRENT_DIR = os.path.dirname(settings_json_path)
-  with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
-    versions = json.load(f)
   sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
   from project import settings
-  if settings_json["layer"]["version"] != "latest":
-    versions["project"] = settings_json["layer"]["version"]
-  if settings_json["pip"]["layer"]["version"] != "latest":
-    versions["external"] = settings_json["pip"]["layer"]["version"]
-  if settings_json["handlers"]["version"] != "latest":
-    versions["handlers"] = settings_json["handlers"]["version"]
+  # バージョンを取得
+  if versions is None:
+    with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
+      versions = json.load(f)
+    if settings_json["layer"]["version"] != "latest":
+      versions["project"] = settings_json["layer"]["version"]
+    if settings_json["pip"]["layer"]["version"] != "latest":
+      versions["external"] = settings_json["pip"]["layer"]["version"]
+    if settings_json["handlers"]["version"] != "latest":
+      versions["handlers"] = settings_json["handlers"]["version"]
+  # 型を確認し、文字列の場合は置換
+  global MAIN
+  global LAMBDA
+  if versions["project"].__class__ is str:
+    MAIN = MAIN.replace("v{project_version:04d}", "{project_version}")
+  if versions["external"].__class__ is str:
+    MAIN = MAIN.replace("v{external_version:04d}", "{external_version}")
+  if versions["handlers"].__class__ is str:
+    LAMBDA = LAMBDA.replace("v{handlers_version:04d}", "{handlers_version}")
+  # YAMLを生成開始
   YAML = MAIN.format(
     S3_BUCKET=settings_json["S3"]["bucket"],
     S3_KEY=settings_json["S3"]["key"],
