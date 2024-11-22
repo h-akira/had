@@ -27,12 +27,9 @@ def parse_args():
   parser.add_argument("-p", "--project2s3", metavar="settings-json", help="settings.json file")
   parser.add_argument("-e", "--external2s3", metavar="settings-json", help="settings.json file")
   parser.add_argument("-D", "--deploy-all", metavar="settings-json", help="do all step to deploy")
-  # parser.add_argument("-o", "--output", metavar="output-file", default="output", help="output file")
-  # parser.add_argument("-", "--", action="store_true", help="")
-  # parser.add_argument("file", metavar="input-file", help="input file")
+  parser.add_argument("-w", "--no-wait", action="store_true", help="do not wait for the completion of \
+the operation when execute cloudformation create, update, delete")
   options = parser.parse_args()
-  # if not os.path.isfile(options.file): 
-  #   raise Exception("The input file does not exist.") 
   return options
 
 def print_not_executed(options, executed: list):
@@ -84,9 +81,9 @@ def main():
     layers2s3(options.deploy_all, project_upload=True, external_upload=True, versions=versions)
     gen_yaml(options.deploy_all, yaml_add=options.generate_cfn_yaml_add, versions=versions)
     if cfn_exists(options.deploy_all, print_message=False):
-      cfn_update(options.deploy_all)
+      cfn_update(options.deploy_all, wait=not options.no_wait)
     else:
-      cfn_create(options.deploy_all)
+      cfn_create(options.deploy_all, wait=not options.no_wait)
     print_not_executed(options, ["deploy_all"])
     sys.exit()
 
@@ -116,7 +113,7 @@ def main():
   if options.cfn_update:
     print("===== Update CloudFormation =====")
     from had.scripts import cfn_update
-    cfn_update(options.cfn_update)
+    cfn_update(options.cfn_update, wait=not options.no_wait)
     print_not_executed(
       options,
       ["cfn_update", "generate_handlers", "handlers2s3", "project2s3", "external2s3", "generage_cfn_yaml"]
@@ -124,7 +121,7 @@ def main():
   elif options.cfn_delete:
     print("===== Delete CloudFormation =====")
     from had.scripts import cfn_delete
-    cfn_delete(options.cfn_delete)
+    cfn_delete(options.cfn_delete, wait=not options.no_wait)
     print_not_executed(
       options,
       ["cfn_delete", "generate_handlers", "handlers2s3", "project2s3", "external2s3", "generage_cfn_yaml"]
@@ -132,7 +129,7 @@ def main():
   elif options.cfn_create:
     print("===== Create CloudFormation =====")
     from had.scripts import cfn_create
-    cfn_create(options.cfn_create)
+    cfn_create(options.cfn_create, wait=not options.no_wait)
     print_not_executed(
       options,
       ["cfn_create", "generate_handlers", "handlers2s3", "project2s3", "external2s3", "generage_cfn_yaml"]
