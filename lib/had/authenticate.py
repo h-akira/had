@@ -2,14 +2,9 @@ from had.shourtcuts import render, redirect, error_render
 import urllib.parse
 from datetime import datetime, timedelta
 from http.cookies import SimpleCookie
-try:
-  import boto3
-  import botocore
-except ModuleNotFoundError:
-  pass
-
 
 def logout_redirect(request):
+  import boto3
   from project import settings
   if request.auth:
     client = boto3.client('cognito-idp')
@@ -41,6 +36,8 @@ def logout_redirect(request):
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
 def login_redirect(AuthParameters, AuthFlow="USER_PASSWORD_AUTH", return_error=False):
+  import boto3
+  import botocore
   from project import settings
   client = boto3.client('cognito-idp')
   try:
@@ -88,13 +85,3 @@ def login_redirect(AuthParameters, AuthFlow="USER_PASSWORD_AUTH", return_error=F
       cookie['refresh_token'].OutputString()
     ]
   )
-# except Exception as e:
-#   import traceback
-#   return error_render(None, traceback.format_exc())
-# return redirect(settings.LOGIN_REDIRECT_URL, set_cookie=cookie.output(header='', sep=';'))
-
-
-
-
-
-

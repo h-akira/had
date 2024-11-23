@@ -77,13 +77,19 @@ def main():
       "project": now
     }
     gen_handlers(options.deploy_all)
+    print("generated handlers.")
     handlers2s3(options.deploy_all, versions=versions)
+    print("uploaded handlers.")
     layers2s3(options.deploy_all, project_upload=True, external_upload=True, versions=versions)
+    print("uploaded layers.")
     gen_yaml(options.deploy_all, yaml_add=options.generate_cfn_yaml_add, versions=versions)
+    print("generated cfn yaml.")
     if cfn_exists(options.deploy_all, print_message=False):
       cfn_update(options.deploy_all, wait=not options.no_wait)
+      print("updated cfn.")
     else:
       cfn_create(options.deploy_all, wait=not options.no_wait)
+      print("created cfn.")
     print_not_executed(options, ["deploy_all"])
     sys.exit()
 
