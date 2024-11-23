@@ -27,7 +27,7 @@ def lambda_handler(event, context):
       if not request.auth:
         return redirect(settings.LOGIN_URL)
   except Exception as e:
-    logger.exception('Raise Exception: %s', error)
+    logger.exception('Raise Exception: %s', e)
     return error_render(None, traceback.format_exc())
   if request.error:
     return error_render(None, request.error)
@@ -41,7 +41,7 @@ def lambda_handler(event, context):
     else:
       return {function}(request)
   except Exception as e:
-    logger.exception('Raise Exception: %s', error)
+    logger.exception('Raise Exception: %s', e)
     return error_render(request, traceback.format_exc())"""
 
 def gen_handlers(settings_json_path):
