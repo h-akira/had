@@ -133,7 +133,9 @@ def s3_integration(path, content_type="text/html", parameters=[]):
   }
 
 def error_render(request=None, error_message=None):
-  error_html= """\
+  from project import settings
+  if settings.DEBUG:
+    error_html= """\
 <h1>Error</h1>
 <h3>Error Message</h3>
 {error_message}
@@ -142,20 +144,34 @@ def error_render(request=None, error_message=None):
 <h3>Context</h3>
 {context}
 """
-  if not request:
-    return {
-      "statusCode": 500,
-      "headers": {
-        "Content-Type": "text/html; charset=UTF-8"
-      },
-      "body": error_html.format(error_message=error_message, event="None", context="None")
-    }
+    if not request:
+      return {
+        "statusCode": 500,
+        "headers": {
+          "Content-Type": "text/html; charset=UTF-8"
+        },
+        "body": error_html.format(error_message=error_message, event="None", context="None")
+      }
+    else:
+      return {
+        "statusCode": 500,
+        "headers": {
+          "Content-Type": "text/html; charset=UTF-8"
+        },
+        "body": error_html.format(error_message=error_message, event=request.event, context=request.context)
+      }
   else:
+    error_html= """\
+<h1>Error</h1>
+<p>Sorry, an error occurred.</p>
+<p>Please try again later, or contact the administrator.</p>
+"""
     return {
       "statusCode": 500,
       "headers": {
         "Content-Type": "text/html; charset=UTF-8"
       },
-      "body": error_html.format(error_message=error_message, event=request.event, context=request.context)
+      "body": error_html
     }
+
 

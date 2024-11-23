@@ -15,6 +15,9 @@ from had.handler import RequestClass
 from {app}.views import {function}
 from had.shourtcuts import redirect, error_render
 import traceback
+import logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
   try:
@@ -24,6 +27,7 @@ def lambda_handler(event, context):
       if not request.auth:
         return redirect(settings.LOGIN_URL)
   except Exception as e:
+    logger.exception('Raise Exception: %s', error)
     return error_render(None, traceback.format_exc())
   if request.error:
     return error_render(None, request.error)
@@ -31,19 +35,14 @@ def lambda_handler(event, context):
     pathParameters = event["pathParameters"]
   except KeyError:
     pathParameters = False
-  if settings.DEBUG:
-    try:
-      if pathParameters:
-        return {function}(request, **pathParameters)
-      else:
-        return {function}(request)
-    except Exception as e:
-      return error_render(request, traceback.format_exc())
-  else:
+  try:
     if pathParameters:
       return {function}(request, **pathParameters)
     else:
-      return {function}(request)"""
+      return {function}(request)
+  except Exception as e:
+    logger.exception('Raise Exception: %s', error)
+    return error_render(request, traceback.format_exc())"""
 
 def gen_handlers(settings_json_path):
   with open(settings_json_path, "r") as f:
