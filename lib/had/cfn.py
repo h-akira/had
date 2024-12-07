@@ -212,13 +212,13 @@ APIGW = """\
 # """
 
 def resource2index(resource):
-  return resource.replace("/","XxXQq00qQXxX").replace("{","QXxQ00").replace("}","00QxXQ").replace("_","XqqxQ0QxqqX")
+  return resource.replace("/","XxXQq00qQXxX").replace("{","QXxQ00").replace("}","00QxXQ").replace("_","XqqxQ0QxqqX").replace(".","QdQzQ")
 
 def lambdaname2index(lambdaname):
-  return lambdaname.replace("-","Qx6QqX").replace("_","xQ4xXq").replace(":","Q2Qqxq")
+  return lambdaname.replace("-","Qx6QqX").replace("_","xQ4xXq").replace(":","Q2Qqxq").replace(".","QdQzQ")
 
 def method2index(method):
-  return method.replace("GET","QQQxq").replace("POST","XqQQQQXQq")
+  return method.replace("GET","QQQxq").replace("POST","XqQQQQXQq").replace(".","QdQzQ")
 
 def apigw2index(apigw, gateways=None):
   if apigw.__class__ is int:
