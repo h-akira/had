@@ -15,7 +15,7 @@ LAMBDA = """\
         S3Bucket: {S3_BUCKET}
         S3Key: {S3_KEY}/handlers/v{handlers_version:04d}/{app}/{name}.zip
       Runtime: python3.12
-      Timeout: 10
+      Timeout: {timeout}
       FileSystemConfigs: []
       Layers:
       - !Ref LambdaLayerExternal
@@ -273,7 +273,7 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
   )
   # API Gatewayを追加
   for apigw in settings.AWS["API"]["gateways"]:
-    if apigw["override"]:
+    if apigw.get("override"):
       YAML += apigw["override"]
     else:
       YAML += APIGW.format(
@@ -304,6 +304,9 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
         if myresource != "":
           if myresource[-1] == "/":
             myresource = myresource[:-1]
+        timeout = settings.AWS["Lambda"].get("timeout")
+        if timeout is None:
+          timeout = 10
         YAML += LAMBDA.format(
           app=APP["name"],
           prefix=settings.AWS["Lambda"]["prefix"],
@@ -311,8 +314,8 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
           handlers_version=versions["handlers"],
           S3_BUCKET=settings_json["S3"]["bucket"],
           S3_KEY=settings_json["S3"]["key"],
-          # index=lambda_list.index(f"{APP['name']}:{urlpattern['name']}")
-          index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}")
+          index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
+          timeout=timeout
         )
         for method in urlpattern["methods"]:
           YAML += LAMBDA_PERMISSION.format(
