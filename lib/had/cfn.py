@@ -22,6 +22,7 @@ LAMBDA = """\
       - !Ref LambdaLayerProject
       Architectures:
       - "x86_64"
+      MemorySize: {memory}
 """
 LAMBDA_PERMISSION = """\
   # LambdaにAPI Gatewayからの呼び出し権限を付与
@@ -304,9 +305,18 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
         if myresource != "":
           if myresource[-1] == "/":
             myresource = myresource[:-1]
-        timeout = settings.AWS["Lambda"].get("timeout")
-        if timeout is None:
-          timeout = 10
+        if urlpattern["timeout"] is None:
+          timeout = settings.AWS["Lambda"].get("timeout")
+          if timeout is None:
+            timeout = 10
+        else:
+          timeout = urlpattern["timeout"]
+        if urlpattern["memory"] is None:
+          memory = settings.AWS["Lambda"].get("memory")
+          if memory is None:
+            memory = 128
+        else:
+          memory = urlpattern["memory"]
         YAML += LAMBDA.format(
           app=APP["name"],
           prefix=settings.AWS["Lambda"]["prefix"],
@@ -315,7 +325,8 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
           S3_BUCKET=settings_json["S3"]["bucket"],
           S3_KEY=settings_json["S3"]["key"],
           index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
-          timeout=timeout
+          timeout=timeout,
+          memory=memory
         )
         for method in urlpattern["methods"]:
           YAML += LAMBDA_PERMISSION.format(

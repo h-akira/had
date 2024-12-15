@@ -1,6 +1,6 @@
 import re
 
-def path(url, function=None, name=None, methods=['GET'], role=None, integration="lambda", login_required=False, apigw=0):
+def path(url, function=None, name=None, methods=['GET'], role=None, integration="lambda", login_required=False, apigw=0, timeout=None, memory=None):
   if name is None:
     raise ValueError('name is required')
   # 大文字に変換
@@ -11,11 +11,15 @@ def path(url, function=None, name=None, methods=['GET'], role=None, integration=
       raise ValueError('Invalid method: {}'.format(method))
   if integration.lower() not in ['lambda', 's3', 'cloudfront']:
     raise ValueError('Invalid integration: {}'.format(integration))
+  if integration != "lambda" and (timeout is not None or memory is not None):
+    raise ValueError('timeout and memory are only for lambda')
   return {
     'url': url,
     'function': function,
     'name': name,
     'methods': methods,
+    'timeout':timeout,
+    'memory':memory,
     'role':role,
     'integration':integration,
     'login_required':login_required,

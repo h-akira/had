@@ -186,6 +186,7 @@ AWS = {{
   "Lambda":{{
     "prefix":"{stack}-{environment}-lambda",
     "timeout":10,
+    "memory":128,
     "role":{{
       "name":"role-{stack}-{environment}-lambda-common",
     }}
