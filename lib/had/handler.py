@@ -3,9 +3,12 @@ from jwt import PyJWKClient
 from datetime import datetime
 import urllib.parse
 from http.cookies import SimpleCookie
+import logging
 
 class RequestClass:
   def __init__(self, event, context):
+    self.logger = logging.getLogger()
+    self.logger.setLevel(logging.INFO)
     self.error = None
     self.event = event
     self.context = context
