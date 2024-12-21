@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import importlib
+import random
 
 LAMBDA = """\
   # Lambda関数の作成
@@ -189,7 +190,7 @@ APIGW = """\
 """
 
 DEPLOYMENT = """\
-  MyApiGatewayDeployment{apigw_index}:
+  MyApiGatewayDeployment{apigw_index}{random_id}:
     Type: AWS::ApiGateway::Deployment
     DeletionPolicy: Delete
     Properties:
@@ -236,6 +237,9 @@ def apigw2index(apigw, gateways=None):
     else:
       apigw = gateways[apigw]["name"]
   return apigw.replace("-","Qx6QqX").replace("_","xQ4xXq")
+
+def gen_random_id(length=8):
+  return "".join([random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for i in range(length)]
 
 def gen_yaml(settings_json_path, yaml_add=None, versions=None):
   with open(settings_json_path, "r") as f:
@@ -301,7 +305,8 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
         - {}
 """.format(binary_media_type)
     YAML += DEPLOYMENT.format(
-      apigw_index=apigw2index(apigw["name"])
+      apigw_index=apigw2index(apigw["name"]),
+      random_id=gen_random_id()
     )
     YAML += STAGE.format(
       apigw_index=apigw2index(apigw["name"])
