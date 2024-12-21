@@ -179,7 +179,6 @@ Resources:
         - "python{PYTHON_VERSION}"
 """
 APIGW = """\
-  # API Gateway REST APIの作成
   MyApiGateway{apigw_index}:
     Type: 'AWS::ApiGateway::RestApi'
     Properties:
@@ -187,22 +186,18 @@ APIGW = """\
       EndpointConfiguration:
         Types:
           - REGIONAL
-"""
-
-DEPLOYMENT = """\
+{binary_media_types}
   MyApiGatewayDeployment{apigw_index}{random_id}:
     Type: AWS::ApiGateway::Deployment
     DeletionPolicy: Delete
     Properties:
       RestApiId: !Ref MyApiGateway{apigw_index}
-"""
 
-STAGE = """\
   MyApiGatewayStage{apigw_index}:
     Type: AWS::ApiGateway::Stage
     DeletionPolicy: Delete
     Properties:
-      DeploymentId: !GetAtt MyApiGatewayDeployment{apigw_index}.DeploymentId
+      DeploymentId: !GetAtt MyApiGatewayDeployment{apigw_index}{random_id}.DeploymentId
       StageName: stage-01
       TracingEnabled: false
       RestApiId: !Ref MyApiGateway{apigw_index}
@@ -287,30 +282,33 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
   )
   # API Gatewayを追加
   for apigw in settings.AWS["API"]["gateways"]:
-    # if apigw.get("override"):
-    #   YAML += apigw["override"]
-    # else:
-    YAML += APIGW.format(
-      apigw_index=apigw2index(apigw["name"]),
-      api_name=apigw["name"]
-    )
+    binary_media_types = ""
     if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
-      YAML += f"""\
+      binary_media_types += f"""\
       BinaryMediaTypes:
 """
       for binary_media_type in apigw["binary-media-types"]:
         if binary_media_type == "*/*":
           binary_media_type="'*/*'"
-        YAML += """\
+        binary_media_types += """\
         - {}
 """.format(binary_media_type)
-    YAML += DEPLOYMENT.format(
+    # if apigw.get("override"):
+    #   YAML += apigw["override"]
+    # else:
+    YAML += APIGW.format(
       apigw_index=apigw2index(apigw["name"]),
+      api_name=apigw["name"],
+      binary_media_types=binary_media_types,
       random_id=gen_random_id()
     )
-    YAML += STAGE.format(
-      apigw_index=apigw2index(apigw["name"])
-    )
+    # YAML += DEPLOYMENT.format(
+    #   apigw_index=apigw2index(apigw["name"]),
+    #   random_id=gen_random_id()
+    # )
+    # YAML += STAGE.format(
+    #   apigw_index=apigw2index(apigw["name"])
+    # )
   # Lambdaを追加
   lambda_list=[]
   for APP in settings.APPS:
