@@ -5,7 +5,7 @@ import importlib
 
 LAMBDA = """\
   # Lambda関数の作成
-  MyLambdaFunction{index}:
+  MyLambdaFunction{function_index}:
     Type: 'AWS::Lambda::Function'
     Properties:
       FunctionName: {prefix}-{app}-{name}
@@ -29,7 +29,7 @@ LAMBDA_PERMISSION = """\
   LambdaInvokePermission{permission_index}:
     Type: 'AWS::Lambda::Permission'
     Properties:
-      FunctionName: !Ref MyLambdaFunction{index}
+      FunctionName: !Ref MyLambdaFunction{function_index}
       Action: 'lambda:InvokeFunction'
       Principal: 'apigateway.amazonaws.com'
       SourceArn: !Sub
@@ -66,7 +66,7 @@ APIGW_METHOD_S3 = """\
 
 """
 APIGW_RESOURCE = """\
-  MyResource{index}:
+  MyResource{resource_index}:
     Type: "AWS::ApiGateway::Resource"
     Properties:
       ParentId: {ParentId}
@@ -86,7 +86,7 @@ APIGW_METHOD_LAMBDA= """\
         IntegrationHttpMethod: 'POST'
         Type: 'AWS_PROXY'
         Uri: !Sub
-          arn:aws:apigateway:${{AWS::Region}}:lambda:path/2015-03-31/functions/${{MyLambdaFunction{index}.Arn}}/invocations
+          arn:aws:apigateway:${{AWS::Region}}:lambda:path/2015-03-31/functions/${{MyLambdaFunction{function_index}.Arn}}/invocations
       MethodResponses:
         - StatusCode: '200'
 """
@@ -179,7 +179,7 @@ Resources:
 """
 APIGW = """\
   # API Gateway REST APIの作成
-  MyApiGateway{index}:
+  MyApiGateway{apigw_index}:
     Type: 'AWS::ApiGateway::RestApi'
     Properties:
       Name: '{api_name}'
@@ -215,7 +215,7 @@ APIGW = """\
 def resource2index(resource):
   return resource.replace("/","XxXQq00qQXxX").replace("{","QXxQ00").replace("}","00QxXQ").replace("_","XqqxQ0QxqqX").replace(".","QdQzQ")
 
-def lambdaname2index(lambdaname):
+def lambda2index(lambdaname):
   return lambdaname.replace("-","Qx6QqX").replace("_","xQ4xXq").replace(":","Q2Qqxq").replace(".","QdQzQ")
 
 def method2index(method):
@@ -280,7 +280,7 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
       YAML += apigw["override"]
     else:
       YAML += APIGW.format(
-        index=apigw2index(apigw["name"]),
+        apigw_index=apigw2index(apigw["name"]),
         api_name=apigw["name"]
       )
       if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
@@ -326,16 +326,16 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
           handlers_version=versions["handlers"],
           S3_BUCKET=settings_json["S3"]["bucket"],
           S3_KEY=settings_json["S3"]["key"],
-          index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
+          function_index=lambda2index(f"{APP['name']}:{urlpattern['name']}"),
           timeout=timeout,
           memory=memory
         )
         for method in urlpattern["methods"]:
           YAML += LAMBDA_PERMISSION.format(
             # index=lambda_list.index(f"{APP['name']}:{urlpattern['name']}"),
-            index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
+            function_index=lambda2index(f"{APP['name']}:{urlpattern['name']}"),
             # permission_index=lambda_permission_counter,
-            permission_index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}") + method2index(method),
+            permission_index=lambda2index(f"{APP['name']}:{urlpattern['name']}") + method2index(method),
             myresource=myresource,
             apigw_index=apigw2index(urlpattern["apigw"], settings.AWS["API"]["gateways"]),
             method=method
@@ -384,7 +384,7 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
             YAML += APIGW_RESOURCE.format(
               # index=resource_list.index(resource),
               apigw_index=apigw2index(apigw["name"]),
-              index=resource2index(resource),
+              resource_index=resource2index(resource),
               ParentId=ParentId,
               PathPart=u
             )
@@ -425,9 +425,7 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
                 name=urlpattern["name"],
                 apigw_index=apigw2index(apigw["name"]),
                 app=APP["name"],
-                # index=lambda_list.index(f"{APP['name']}:{urlpattern['name']}"),
-
-                index=lambdaname2index(f"{APP['name']}:{urlpattern['name']}"),
+                function_index=lambda2index(f"{APP['name']}:{urlpattern['name']}"),
                 method_index = resource2index(resource) + method2index(method)
               )
             elif urlpattern["integration"].lower() == "cloudfront":
