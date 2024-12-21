@@ -125,7 +125,7 @@ Resources:
                   - "cognito-idp:AdminUpdateUserAttributes"
                   - "cognito-idp:AdminDeleteUser"
                   - "cognito-idp:AdminSetUserPassword"
-                Resource: "arn:aws:cognito-idp:ap-northeast-1:534449283880:userpool/{userPoolID}"
+                Resource: "arn:aws:cognito-idp:{region}:{accountID}:userpool/{userPoolID}"
   
   # API GatewayからS3を参照するためのロール
   APIGW2S3Role:
@@ -259,6 +259,8 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
     LAMBDA = LAMBDA.replace("v{handlers_version:04d}", "{handlers_version}")
   # YAMLを生成開始
   YAML = MAIN.format(
+    region=settings.AWS["region"],
+    accountID=settings.AWS["account"],
     S3_BUCKET=settings_json["S3"]["bucket"],
     S3_KEY=settings_json["S3"]["key"],
     project_version=versions["project"],
