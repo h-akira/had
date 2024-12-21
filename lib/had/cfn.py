@@ -188,29 +188,37 @@ APIGW = """\
           - REGIONAL
 """
 
-# DEPLOYMENT = """\
-#   MyApiDeployment:
-#     Type: 'AWS::ApiGateway::Deployment'
-#     Properties:
-#       RestApiId: !Ref MyApiGateway
-#       StageName: {StageName}
-# """
-# """
-#   # Optional: Stage-specific settings
-#   MyStage:
-#     Type: 'AWS::ApiGateway::Stage'
-#     Properties:
-#       DeploymentId: !Ref MyApiDeployment
-#       RestApiId: !Ref MyApiGateway
-#       StageName: {StageName}
-#       Description: Deployment for version 1 of the API
-#       MethodSettings:
-#         - DataTraceEnabled: true
-#           HttpMethod: "*"
-#           LoggingLevel: INFO
-#           ResourcePath: "/*"
-#           MetricsEnabled: true
-# """
+DEPLOYMENT = """\
+  MyApiGatewayDeployment{apigw_index}:
+    Type: AWS::ApiGateway::Deployment
+    DeletionPolicy: Delete
+    Properties:
+      RestApiId: !Ref MyApiGateway{apigw_index}
+"""
+
+STAGE = """\
+  MyApiGatewayStage{apigw_index}:
+    Type: AWS::ApiGateway::Stage
+    DeletionPolicy: Delete
+    Properties:
+      DeploymentId: !GetAtt MyApiGatewayDeployment{apigw_index}.DeploymentId
+      StageName: stage-01
+      TracingEnabled: false
+      RestApiId: !Ref MyApiGateway{apigw_index}
+      MethodSettings:
+        - CacheTtlInSeconds: 300
+          LoggingLevel: INFO
+          ResourcePath: /*
+          CacheDataEncrypted: false
+          DataTraceEnabled: true
+          ThrottlingBurstLimit: 5000
+          CachingEnabled: false
+          MetricsEnabled: true
+          HttpMethod: '*'
+          ThrottlingRateLimit: 10000
+      CacheClusterSize: '0.5'
+      CacheClusterEnabled: false
+"""
 
 def resource2index(resource):
   return resource.replace("/","XxXQq00qQXxX").replace("{","QXxQ00").replace("}","00QxXQ").replace("_","XqqxQ0QxqqX").replace(".","QdQzQ")
@@ -267,7 +275,6 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
     external_version=versions["external"],
     layer_name_project=settings_json["layer"]["name"],
     layer_name_external=settings_json["pip"]["layer"]["name"],
-    # api_name=settings.AWS["API Gateway"]["name"],
     role_lambda_name=settings.AWS["Lambda"]["role"]["name"],
     role_apigw2s3_name=settings.AWS["API"]["role2s3"]["name"],
     policy_apigw2s3_name=settings.AWS["API"]["role2s3"]["policy"]["name"],
@@ -276,27 +283,31 @@ def gen_yaml(settings_json_path, yaml_add=None, versions=None):
   )
   # API Gatewayを追加
   for apigw in settings.AWS["API"]["gateways"]:
-    if apigw.get("override"):
-      YAML += apigw["override"]
-    else:
-      YAML += APIGW.format(
-        apigw_index=apigw2index(apigw["name"]),
-        api_name=apigw["name"]
-      )
-      if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
-        YAML += f"""\
+    # if apigw.get("override"):
+    #   YAML += apigw["override"]
+    # else:
+    YAML += APIGW.format(
+      apigw_index=apigw2index(apigw["name"]),
+      api_name=apigw["name"]
+    )
+    if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
+      YAML += f"""\
       BinaryMediaTypes:
 """
-        for binary_media_type in apigw["binary-media-types"]:
-          if binary_media_type == "*/*":
-            binary_media_type="'*/*'"
-          YAML += """\
+      for binary_media_type in apigw["binary-media-types"]:
+        if binary_media_type == "*/*":
+          binary_media_type="'*/*'"
+        YAML += """\
         - {}
 """.format(binary_media_type)
-
+    YAML += DEPLOYMENT.format(
+      apigw_index=apigw2index(apigw["name"])
+    )
+    YAML += STAGE.format(
+      apigw_index=apigw2index(apigw["name"])
+    )
   # Lambdaを追加
   lambda_list=[]
-  # lambda_permission_counter = 0
   for APP in settings.APPS:
     urls = importlib.import_module(f"{APP['name']}.urls")
     for urlpattern in urls.urlpatterns:
