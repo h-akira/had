@@ -239,7 +239,7 @@ def apigw2index(apigw, gateways=None):
   return apigw.replace("-","Qx6QqX").replace("_","xQ4xXq")
 
 def gen_random_id(length=8):
-  return "".join([random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for i in range(length)]
+  return "".join([random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for i in range(length)])
 
 def gen_yaml(settings_json_path, yaml_add=None, versions=None):
   with open(settings_json_path, "r") as f:
