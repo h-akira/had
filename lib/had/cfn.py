@@ -178,44 +178,6 @@ Resources:
       CompatibleRuntimes: 
         - "python{PYTHON_VERSION}"
 """
-# APIGW = """\
-#   MyApiGateway{apigw_index}:
-#     Type: 'AWS::ApiGateway::RestApi'
-#     Properties:
-#       Name: '{api_name}'
-#       EndpointConfiguration:
-#         Types:
-#           - REGIONAL
-# {binary_media_types}
-#   MyApiGatewayDeployment{apigw_index}{random_id}:
-#     Type: AWS::ApiGateway::Deployment
-#     DeletionPolicy: Delete
-#     Properties:
-#       RestApiId: !Ref MyApiGateway{apigw_index}
-#
-#   MyApiGatewayStage{apigw_index}:
-#     Type: AWS::ApiGateway::Stage
-#     DeletionPolicy: Delete
-#     Properties:
-#       DeploymentId: !GetAtt MyApiGatewayDeployment{apigw_index}{random_id}.DeploymentId
-#       StageName: stage-01
-#       TracingEnabled: false
-#       RestApiId: !Ref MyApiGateway{apigw_index}
-#       MethodSettings:
-#         - CacheTtlInSeconds: 300
-#           LoggingLevel: INFO
-#           ResourcePath: /*
-#           CacheDataEncrypted: false
-#           DataTraceEnabled: true
-#           ThrottlingBurstLimit: 5000
-#           CachingEnabled: false
-#           MetricsEnabled: true
-#           HttpMethod: '*'
-#           ThrottlingRateLimit: 10000
-#       CacheClusterSize: '0.5'
-#       CacheClusterEnabled: false
-# """
-
 APIGW = """\
   MyApiGateway{apigw_index}:
     Type: 'AWS::ApiGateway::RestApi'
@@ -225,7 +187,7 @@ APIGW = """\
         Types:
           - REGIONAL
 {binary_media_types}
-  MyApiGatewayDeployment{apigw_index}:
+  MyApiGatewayDeployment{apigw_index}{random_id}:
     Type: AWS::ApiGateway::Deployment
     DeletionPolicy: Delete
     Properties:
@@ -235,7 +197,7 @@ APIGW = """\
     Type: AWS::ApiGateway::Stage
     DeletionPolicy: Delete
     Properties:
-      DeploymentId: !GetAtt MyApiGatewayDeployment{apigw_index}.DeploymentId
+      DeploymentId: !GetAtt MyApiGatewayDeployment{apigw_index}{random_id}.DeploymentId
       StageName: stage-01
       TracingEnabled: false
       RestApiId: !Ref MyApiGateway{apigw_index}
