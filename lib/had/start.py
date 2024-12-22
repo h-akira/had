@@ -178,7 +178,6 @@ AWS = {{
     "gateways":[
       {{
         "name":"api-{stack}-{environment}",
-        "override"::False,
         "binary-media-types":[]
       }}
     ]

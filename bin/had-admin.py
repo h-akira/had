@@ -66,23 +66,18 @@ def main():
     start_project()
     print_not_executed(options, ["start_project"])
     sys.exit()
+  now_str = datetime.datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y%m%d%H%M%S")
   if options.deploy_all:
     print("===== Deploy All =====")
     from had.scripts import gen_handlers, handlers2s3, layers2s3, cfn_create, cfn_update, cfn_exists
     from had.cfn import gen_yaml
-    now = datetime.datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y%m%d%H%M%S")
-    versions = {
-      "handlers": now,
-      "external": now,
-      "project": now
-    }
     gen_handlers(options.deploy_all)
     print("generated handlers.")
-    handlers2s3(options.deploy_all, versions=versions)
+    handlers2s3(options.deploy_all, version=now_str)
     print("uploaded handlers.")
-    layers2s3(options.deploy_all, project_upload=True, external_upload=True, versions=versions)
+    layers2s3(options.deploy_all, version=now_str, project_upload=True, external_upload=True)
     print("uploaded layers.")
-    gen_yaml(options.deploy_all, yaml_add=options.generate_cfn_yaml_add, versions=versions)
+    Template(options.deploy_all, options.generate_cfn_yaml_add, versions={"handlers": now_str, "external": now_str, "project": now_str})
     print("generated cfn yaml.")
     if cfn_exists(options.deploy_all, print_message=False):
       cfn_update(options.deploy_all, wait=not options.no_wait)
@@ -101,19 +96,20 @@ def main():
   if options.handlers2s3:
     print("===== Handlers to S3 =====")
     from had.scripts import handlers2s3
-    handlers2s3(options.handlers2s3)
+    handlers2s3(options.handlers2s3, version=now_str)
   if options.project2s3:
     print("===== Project to S3 =====")
     from had.scripts import layers2s3
-    layers2s3(options.project2s3, project_upload=True)
+    layers2s3(options.project2s3, version=now_str, project_upload=True)
   if options.external2s3:
     print("===== External to S3 =====")
     from had.scripts import layers2s3
-    layers2s3(options.external2s3, external_upload=True)
+    layers2s3(options.external2s3, version=now_str, external_upload=True)
   if options.generate_cfn_yaml:
     print("===== Generate CloudFormation YAML =====")
-    from had.cfn import gen_yaml
-    gen_yaml(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
+    from had.cfn import Template
+    # gen_yaml(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
+    Template(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
 
   # どれか一つだけ実行可能
   if options.cfn_update:
