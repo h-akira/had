@@ -246,7 +246,7 @@ def cfn_exists(settings_json_path, print_message=True):
     if print_message:
       print("The stack exists.")
     return True
-  except subprocess.CalledProcessError:
+  except subprocess.CalledProcessError as e:
     if "does not exist" in e.stderr.decode():
       # raise Exception("The stack does not exist.")
       if print_message:
@@ -263,15 +263,15 @@ def _upload_yaml_to_s3(local_file, settings_json):
   s3_url = f'https://{settings_json["S3"]["bucket"]}.s3.{settings_json["region"]}.amazonaws.com/{s3_key}'
   return s3_url
 
-def _version_read(later_version_json_path):
-  with open(later_version_json_path, "r") as f:
-    versions = json.load(f)
-  return versions
+# def _version_read(later_version_json_path):
+#   with open(later_version_json_path, "r") as f:
+#     versions = json.load(f)
+#   return versions
 
 def _latest_version_overwrite(latest_version_json_path, versions=None, handler=None, project=None, external=None):
   if versions is None:
     if os.path.exists(latest_version_json_path):
-      with open(later_version_json_path, "r") as f:
+      with open(latest_version_json_path, "r") as f:
         versions = json.load(f)
     else:
       versions = {
