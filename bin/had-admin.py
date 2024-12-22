@@ -70,7 +70,8 @@ def main():
   if options.deploy_all:
     print("===== Deploy All =====")
     from had.scripts import gen_handlers, handlers2s3, layers2s3, cfn_create, cfn_update, cfn_exists
-    from had.cfn import gen_yaml
+    # from had.cfn import gen_yaml
+    from had.cfn import Template
     gen_handlers(options.deploy_all)
     print("generated handlers.")
     handlers2s3(options.deploy_all, version=now_str)
