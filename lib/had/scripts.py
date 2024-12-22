@@ -270,7 +270,7 @@ def _version_read(later_version_json_path):
 
 def _latest_version_overwrite(latest_version_json_path, versions=None, handler=None, project=None, external=None):
   if versions is None:
-    if os.path.exists(later_version_json_path):
+    if os.path.exists(latest_version_json_path):
       with open(later_version_json_path, "r") as f:
         versions = json.load(f)
     else:
