@@ -290,7 +290,7 @@ def _latest_version_overwrite(latest_version_json_path, versions=None, handler=N
       raise ValueError("versions must be dict.")
     if handler is not None or project is not None or external is not None:
       raise Exception("If versions is not None, handler, project, external must be None.")
-  with open(later_version_json_path, "w") as f:
+  with open(latest_version_json_path, "w") as f:
     json.dump(versions, f, indent=2)
 
 
