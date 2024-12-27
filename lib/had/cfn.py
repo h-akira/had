@@ -89,9 +89,7 @@ class Template:
       MethodResponses:
         - StatusCode: '200'
 """
-  BASE = """\
-AWSTemplateFormatVersion: '2010-09-09'
-Resources:
+  ROLE_LAMBDA = """\
   # Lambda実行ロールの作成
   LambdaExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -124,7 +122,8 @@ Resources:
                   - "cognito-idp:AdminDeleteUser"
                   - "cognito-idp:AdminSetUserPassword"
                 Resource: "arn:aws:cognito-idp:{region}:{accountID}:userpool/{userPoolID}"
-  
+"""
+  ROLE_APIGW2S3 = """\
   # API GatewayからS3を参照するためのロール
   APIGW2S3Role:
     Type: "AWS::IAM::Role"
@@ -151,7 +150,10 @@ Resources:
           Principal:
             Service: "apigateway.amazonaws.com"
           Sid: ""
-
+"""
+  BASE = """\
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
   # Lambda Layerの作成
   LambdaLayerExternal:
     Type: "AWS::Lambda::LayerVersion"
@@ -239,19 +241,10 @@ Resources:
       s = s.replace(i, j)
     return s
   def resource2index(self, resource):
-    # return resource.replace("/","XxXQq00qQXxX").replace("{","QXxQ00").replace("}","00QxXQ").replace("_","XqqxQ0QxqqX").replace(".","QdQzQ")
-    # return resource.translate(str.maketrans(self.resource2index_dic))
     return self.replace_all(resource, self.resource2index_dic)
   def lambda2index(self, lambdaname):
-    # return lambdaname.replace("-","Qx6QqX").replace("_","xQ4xXq").replace(":","Q2Qqxq").replace(".","QdQzQ")
-    # return lambdaname.translate(str.maketrans(self.lambda2index_dic))
     return self.replace_all(lambdaname, self.lambda2index_dic)
   def method2index(self, method):
-    # return method.replace("GET","QQQxq").replace("POST","XqQQQQXQq").replace(".","QdQzQ")
-    # print("------------")
-    # print(method)
-    # print("------------")
-    # return method.translate(str.maketrans(self.method2index_dic))
     return self.replace_all(method, self.method2index_dic)
   def apigw2index(self, apigw, gateways=None):
     if apigw.__class__ is int:
@@ -259,8 +252,6 @@ Resources:
         raise ValueError("gateways is None")
       else:
         apigw = gateways[apigw]["name"]
-    # return apigw.replace("-","Qx6QqX").replace("_","xQ4xXq")
-    # return apigw.translate(str.maketrans(self.apigw2index_dic))
     return self.replace_all(apigw, self.apigw2index_dic)
   def gen_random_id(self, length=8):
     return "".join([random.choice("abcdefghijklmnopqrstuvwxyz0123456789") for i in range(length)])
@@ -269,7 +260,6 @@ Resources:
       with open(latest_version_path, mode="r") as f:
         return json.load(f)
     else:
-      # return False
       raise FileNotFoundError(f"{latest_version_path} not found")
   def set_versions(self, versions, CURRENT_DIR, settings_json):
     if versions is None:
@@ -294,24 +284,45 @@ settings_json["pip"]["layer"]["version"]=="latest":
       self.versions = versions
   def gen_kwargs_BASE(self, settings, settings_json):
     kwargs = dict(
-      region=settings.AWS["region"],
-      accountID=settings.AWS["account"],
+      layer_name_project=settings_json["layer"]["name"],
+      layer_name_external=settings_json["pip"]["layer"]["name"],
       S3_BUCKET=settings_json["S3"]["bucket"],
       S3_KEY=settings_json["S3"]["key"],
       project_version=self.versions["project"],
       external_version=self.versions["external"],
-      layer_name_project=settings_json["layer"]["name"],
-      layer_name_external=settings_json["pip"]["layer"]["name"],
+      PYTHON_VERSION=settings.PYTHON_VERSION
+    )
+    return kwargs
+  def gen_kwargs_ROLE_LAMBDA(self, settings, settings_json):
+    if "account" not in settings.AWS.keys():
+      try:
+        import boto3
+      except:
+        raise ImportError("boto3 is not installed. Please install boto3 or set AWS['account'] in settings.py.")
+      settings.AWS["account"] = boto3.client("sts").get_caller_identity()["Account"]
+    kwargs = dict(
+      region=settings.AWS["region"],
+      accountID=settings.AWS["account"],
       role_lambda_name=settings.AWS["Lambda"]["role"]["name"],
+      userPoolID=settings.AWS["cognito"]["userPoolID"],
+    )
+    return kwargs
+  def gen_kwargs_ROLE_APIGW2S3(self, settings, settings_json):
+    kwargs = dict(
+      S3_BUCKET=settings_json["S3"]["bucket"],
       role_apigw2s3_name=settings.AWS["API"]["role2s3"]["name"],
       policy_apigw2s3_name=settings.AWS["API"]["role2s3"]["policy"]["name"],
-      userPoolID=settings.AWS["cognito"]["userPoolID"],
-      PYTHON_VERSION=settings.PYTHON_VERSION
     )
     return kwargs
   def add_BASE(self, settings, settings_json):
     kwargs = self.gen_kwargs_BASE(settings, settings_json)
     self.YAML += self.BASE.format(**kwargs)
+  def add_ROLE_LAMBDA(self, settings, settings_json):
+    kwargs = self.gen_kwargs_ROLE_LAMBDA(settings, settings_json)
+    self.YAML += self.ROLE_LAMBDA.format(**kwargs)
+  def add_ROLE_APIGW2S3(self, settings, settings_json):
+    kwargs = self.gen_kwargs_ROLE_APIGW2S3(settings, settings_json)
+    self.YAML += self.ROLE_APIGW2S3.format(**kwargs)
   def gen_kwargs_APIGW(self, apigw):
     binary_media_types = ""
     if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
@@ -443,6 +454,8 @@ settings_json["pip"]["layer"]["version"]=="latest":
     from project import settings
     # YAMLを生成開始
     self.add_BASE(settings, settings_json)
+    self.add_ROLE_LAMBDA(settings, settings_json)
+    self.add_ROLE_APIGW2S3(settings, settings_json)
     # API Gatewayを追加
     for apigw in settings.AWS["API"]["gateways"]:
       self.add_APIGW(apigw)
@@ -514,5 +527,8 @@ settings_json["pip"]["layer"]["version"]=="latest":
     with open(settings_json["CloudFormation"]["template"], "w") as f:
       f.write(self.YAML)
     print("Complete!")
+    self.init_after(settings, settings_json)
+  def init_after(self, settings, settings_json):
+    pass
 
 

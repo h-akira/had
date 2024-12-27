@@ -11,6 +11,7 @@ set -eu
 
 # このスクリプトがあるディレクトリに移動
 cd `dirname $0`
+cd ..
 
 VERSION=$(jq -r ".python.version" settings.json)
 TARGET=$(realpath $(jq -r ".pip.target" settings.json))
@@ -54,6 +55,7 @@ set -eu
 
 # このスクリプトがあるディレクトリに移動
 cd `dirname $0`
+cd ..
 
 VERSION=$(jq -r ".python.version" settings.json)
 WHERE=$(jq -r ".pip.target" settings.json)
@@ -103,12 +105,6 @@ else
 fi
 deactivate
 """
-
-latest_version_init = {
-  "handlers": 0,
-  "external": 0,
-  "project": 0
-}
 
 settings_json_init = """\
 {{
@@ -240,12 +236,13 @@ def start_project():
     python_version = "3.12"
   print("Creating project...")
   os.makedirs(project_name)
-  with open(os.path.join(project_name, "python.sh"), "w") as f:
+  os.makedirs(os.path.join(project_name, "bin"))
+  with open(os.path.join(project_name, "bin", "python.sh"), "w") as f:
     f.write(python_shell)
-  os.chmod(os.path.join(project_name, "python.sh"), 0o755)
-  with open(os.path.join(project_name, "pip.sh"), "w") as f:
+  os.chmod(os.path.join(project_name, "bin", "python.sh"), 0o755)
+  with open(os.path.join(project_name, "bin", "pip.sh"), "w") as f:
     f.write(pip_shell)
-  os.chmod(os.path.join(project_name, "pip.sh"), 0o755)
+  os.chmod(os.path.join(project_name, "bin", "pip.sh"), 0o755)
   with open(os.path.join(project_name, "settings.json"), "w") as f:
     f.write(
       settings_json_init.format(
@@ -256,8 +253,6 @@ def start_project():
         s3_bucket=s3_bucket
       )
     )
-  with open(os.path.join(project_name, "latest_version.json"), "w") as f:
-    json.dump(latest_version_init, f, indent=2)
   os.makedirs(os.path.join(project_name, "build/handlers"))
   os.makedirs(os.path.join(project_name, "build/project/templates"))
   os.makedirs(os.path.join(project_name, "build/project/python/lib/python{}/site-packages/project".format(python_version)))

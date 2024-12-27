@@ -45,8 +45,6 @@ def print_not_executed(options, executed: list):
     print("-x/--cfn-exists option is not executed.")
   if options.generate_cfn_yaml and "generate_cfn_yaml" not in executed:
     print("-Y/--generate-cfn-yaml option is not executed.")
-  # if options.generate_cfn_yaml_add and "generate_cfn_yaml_add" not in executed:
-  #   print("-A/--generate-cfn-yaml-add option is not executed.")
   if options.generate_handlers and "generate_handlers" not in executed:
     print("-H/--generate-handlers option is not executed.")
   if options.handlers2s3 and "handlers2s3" not in executed:
@@ -70,7 +68,6 @@ def main():
   if options.deploy_all:
     print("===== Deploy All =====")
     from had.scripts import gen_handlers, handlers2s3, layers2s3, cfn_create, cfn_update, cfn_exists
-    # from had.cfn import gen_yaml
     from had.cfn import Template
     gen_handlers(options.deploy_all)
     print("generated handlers.")
