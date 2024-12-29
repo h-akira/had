@@ -215,26 +215,26 @@ Resources:
       CacheClusterEnabled: false
 """
   resource2index_dic = {
-    "/" : "XxXQq00qQXxX",
-    "{" : "QXxQ00",
-    "}" : "00QxXQ",
-    "_" : "XqqxQ0QxqqX",
-    "." : "QdQzQ",
-    "-" : "Qx6QqX",
+    "/" : "XsX",
+    "{" : "XlX",
+    "}" : "XrX",
+    "_" : "XuX",
+    "." : "XdX",
+    "-" : "XhX",
   }
   lambda2index_dic = {
-    "-" : "Qx6QqX",
-    "_" : "xQ4xXq",
-    ":" : "Q2Qqxq",
-    "." : "QdQzQ"
+    "-" : "XhX",
+    "_" : "XuX",
+    ":" : "XcX",
+    "." : "XdX"
   }
   method2index_dic = {
-    "GET" : "QQQxq",
-    "POST" : "XqQQQQXQq"
+    "GET" : "XgX",
+    "POST" : "XpX"
   }
   apigw2index_dic = {
-    "-" : "Qx6QqX",
-    "_" : "xQ4xXq"
+    "-" : "XhX",
+    "_" : "XuX"
   }
   def replace_all(self, s, dic):
     for i, j in dic.items():
@@ -261,67 +261,67 @@ Resources:
         return json.load(f)
     else:
       raise FileNotFoundError(f"{latest_version_path} not found")
-  def set_versions(self, versions, CURRENT_DIR, settings_json):
+  def set_versions(self, versions, CURRENT_DIR):
     if versions is None:
       self.versions = {}
-      if settings_json["handlers"]["version"]=="latest" or \
-settings_json["layer"]["version"]=="latest" or \
-settings_json["pip"]["layer"]["version"]=="latest":
-        latest_versions = self.get_latest_versions(os.path.join(CURRENT_DIR, settings_json["latest_version"]))
-      if settings_json["handlers"]["version"] == "latest":
+      if self.settings_json["handlers"]["version"]=="latest" or \
+self.settings_json["layer"]["version"]=="latest" or \
+self.settings_json["pip"]["layer"]["version"]=="latest":
+        latest_versions = self.get_latest_versions(os.path.join(CURRENT_DIR, self.settings_json["latest_version"]))
+      if self.settings_json["handlers"]["version"] == "latest":
         self.versions["handlers"] = latest_versions["handlers"]
       else:
-        self.versions["handlers"] = settings_json["handlers"]["version"]
-      if settings_json["layer"]["version"] == "latest":
+        self.versions["handlers"] = self.settings_json["handlers"]["version"]
+      if self.settings_json["layer"]["version"] == "latest":
         self.versions["project"] = latest_versions["project"]
       else:
-        self.versions["project"] = settings_json["layer"]["version"]
-      if settings_json["pip"]["layer"]["version"] == "latest":
+        self.versions["project"] = self.settings_json["layer"]["version"]
+      if self.settings_json["pip"]["layer"]["version"] == "latest":
         self.versions["external"] = latest_versions["external"]
       else:
-        self.versions["external"] = settings_json["pip"]["layer"]["version"]
+        self.versions["external"] = self.settings_json["pip"]["layer"]["version"]
     else:
       self.versions = versions
-  def gen_kwargs_BASE(self, settings, settings_json):
+  def gen_kwargs_BASE(self):
     kwargs = dict(
-      layer_name_project=settings_json["layer"]["name"],
-      layer_name_external=settings_json["pip"]["layer"]["name"],
-      S3_BUCKET=settings_json["S3"]["bucket"],
-      S3_KEY=settings_json["S3"]["key"],
+      layer_name_project=self.settings_json["layer"]["name"],
+      layer_name_external=self.settings_json["pip"]["layer"]["name"],
+      S3_BUCKET=self.settings_json["S3"]["bucket"],
+      S3_KEY=self.settings_json["S3"]["key"],
       project_version=self.versions["project"],
       external_version=self.versions["external"],
-      PYTHON_VERSION=settings.PYTHON_VERSION
+      PYTHON_VERSION=self.settings.PYTHON_VERSION
     )
     return kwargs
-  def gen_kwargs_ROLE_LAMBDA(self, settings, settings_json):
-    if "account" not in settings.AWS.keys():
+  def gen_kwargs_ROLE_LAMBDA(self):
+    if "account" not in self.settings.AWS.keys():
       try:
         import boto3
       except:
         raise ImportError("boto3 is not installed. Please install boto3 or set AWS['account'] in settings.py.")
-      settings.AWS["account"] = boto3.client("sts").get_caller_identity()["Account"]
+      self.settings.AWS["account"] = boto3.client("sts").get_caller_identity()["Account"]
     kwargs = dict(
-      region=settings.AWS["region"],
-      accountID=settings.AWS["account"],
-      role_lambda_name=settings.AWS["Lambda"]["role"]["name"],
-      userPoolID=settings.AWS["cognito"]["userPoolID"],
+      region=self.settings.AWS["region"],
+      accountID=self.settings.AWS["account"],
+      role_lambda_name=self.settings.AWS["Lambda"]["role"]["name"],
+      userPoolID=self.settings.AWS["cognito"]["userPoolID"],
     )
     return kwargs
-  def gen_kwargs_ROLE_APIGW2S3(self, settings, settings_json):
+  def gen_kwargs_ROLE_APIGW2S3(self):
     kwargs = dict(
-      S3_BUCKET=settings_json["S3"]["bucket"],
-      role_apigw2s3_name=settings.AWS["API"]["role2s3"]["name"],
-      policy_apigw2s3_name=settings.AWS["API"]["role2s3"]["policy"]["name"],
+      S3_BUCKET=self.settings_json["S3"]["bucket"],
+      role_apigw2s3_name=self.settings.AWS["API"]["role2s3"]["name"],
+      policy_apigw2s3_name=self.settings.AWS["API"]["role2s3"]["policy"]["name"],
     )
     return kwargs
-  def add_BASE(self, settings, settings_json):
-    kwargs = self.gen_kwargs_BASE(settings, settings_json)
+  def add_BASE(self):
+    kwargs = self.gen_kwargs_BASE()
     self.YAML += self.BASE.format(**kwargs)
-  def add_ROLE_LAMBDA(self, settings, settings_json):
-    kwargs = self.gen_kwargs_ROLE_LAMBDA(settings, settings_json)
+  def add_ROLE_LAMBDA(self):
+    kwargs = self.gen_kwargs_ROLE_LAMBDA()
     self.YAML += self.ROLE_LAMBDA.format(**kwargs)
-  def add_ROLE_APIGW2S3(self, settings, settings_json):
-    kwargs = self.gen_kwargs_ROLE_APIGW2S3(settings, settings_json)
+  def add_ROLE_APIGW2S3(self):
+    kwargs = self.gen_kwargs_ROLE_APIGW2S3()
     self.YAML += self.ROLE_APIGW2S3.format(**kwargs)
   def gen_kwargs_APIGW(self, apigw):
     binary_media_types = ""
@@ -345,16 +345,16 @@ settings_json["pip"]["layer"]["version"]=="latest":
   def add_APIGW(self, apigw):
     kwargs = self.gen_kwargs_APIGW(apigw)
     self.YAML += self.APIGW.format(**kwargs)
-  def gen_kwargs_LAMBDA_FUNCTION(self, APP, urlpattern, settings, settings_json):
-    prefix=settings.AWS["Lambda"]["prefix"]
+  def gen_kwargs_LAMBDA_FUNCTION(self, APP, urlpattern):
+    prefix=self.settings.AWS["Lambda"]["prefix"]
     if urlpattern["timeout"] is None:
-      timeout = settings.AWS["Lambda"].get("timeout")
+      timeout = self.settings.AWS["Lambda"].get("timeout")
       if timeout is None:
         timeout = 10
     else:
       timeout = urlpattern["timeout"]
     if urlpattern["memory"] is None:
-      memory = settings.AWS["Lambda"].get("memory")
+      memory = self.settings.AWS["Lambda"].get("memory")
       if memory is None:
         memory = 128
     else:
@@ -364,17 +364,17 @@ settings_json["pip"]["layer"]["version"]=="latest":
       prefix=prefix,
       name=urlpattern["name"],
       handlers_version=self.versions["handlers"],
-      S3_BUCKET=settings_json["S3"]["bucket"],
-      S3_KEY=settings_json["S3"]["key"],
+      S3_BUCKET=self.settings_json["S3"]["bucket"],
+      S3_KEY=self.settings_json["S3"]["key"],
       function_index=self.lambda2index(f"{APP['name']}:{urlpattern['name']}"),
       timeout=timeout,
       memory=memory
     )
     return kwargs
-  def add_LAMBDA_FUNCTION(self, APP, urlpattern, settings, settings_json):
-    kwargs = self.gen_kwargs_LAMBDA_FUNCTION(APP, urlpattern, settings, settings_json)
+  def add_LAMBDA_FUNCTION(self, APP, urlpattern):
+    kwargs = self.gen_kwargs_LAMBDA_FUNCTION(APP, urlpattern)
     self.YAML += self.LAMBDA_FUNCTION.format(**kwargs)
-  def gen_kwargs_LAMBDA_PERMISSION(self, APP, urlpattern, method, settings):
+  def gen_kwargs_LAMBDA_PERMISSION(self, APP, urlpattern, method):
     myresource=os.path.join(APP["url"],urlpattern["url"])
     if myresource != "":
       if myresource[-1] == "/":
@@ -383,12 +383,12 @@ settings_json["pip"]["layer"]["version"]=="latest":
       function_index=self.lambda2index(f"{APP['name']}:{urlpattern['name']}"),
       permission_index=self.lambda2index(f"{APP['name']}:{urlpattern['name']}") + self.method2index(method),
       myresource=myresource,
-      apigw_index=self.apigw2index(urlpattern["apigw"], settings.AWS["API"]["gateways"]),
+      apigw_index=self.apigw2index(urlpattern["apigw"], self.settings.AWS["API"]["gateways"]),
       method=method
     )
     return kwargs
-  def add_LAMBDA_PERMISSION(self, APP, urlpattern, method, settings):
-    kwargs = self.gen_kwargs_LAMBDA_PERMISSION(APP, urlpattern, method, settings)
+  def add_LAMBDA_PERMISSION(self, APP, urlpattern, method):
+    kwargs = self.gen_kwargs_LAMBDA_PERMISSION(APP, urlpattern, method)
     self.YAML += self.LAMBDA_PERMISSION.format(**kwargs)
   def gen_kwargs_APIGW_RESOURCE(self, apigw, resource, ParentId, PathPart):
     kwargs = dict(
@@ -401,7 +401,7 @@ settings_json["pip"]["layer"]["version"]=="latest":
   def add_APIGW_RESOURCE(self, apigw, resource, ParentId, PathPart):
     kwargs = self.gen_kwargs_APIGW_RESOURCE(apigw, resource, ParentId, PathPart)
     self.YAML += self.APIGW_RESOURCE.format(**kwargs)
-  def gen_kwargs_APIGW_METHOD_S3(self, apigw, resource, method, settings_json, ResourceId):
+  def gen_kwargs_APIGW_METHOD_S3(self, apigw, resource, method, ResourceId):
     DIC=urlpattern["function"]()
     if len(DIC["parameters"]) > 0:
       RequestParameters = "RequestParameters:\n"
@@ -416,16 +416,16 @@ settings_json["pip"]["layer"]["version"]=="latest":
       RequestParameters = ""
     kwargs = dict(
       ResourceId=ResourceId,
-      S3_BUCKET=settings_json["S3"]["bucket"],
-      S3_KEY=os.path.join(settings_json["S3"]["key"], "integration", DIC["path"]),
+      S3_BUCKET=self.settings_json["S3"]["bucket"],
+      S3_KEY=os.path.join(self.settings_json["S3"]["key"], "integration", DIC["path"]),
       RequestParameters=RequestParameters,
       CONTENT_TYPE=DIC["content_type"],
       apigw_index=apigw2index(apigw["name"]),
       method_index = resource2index(resource) + method2index(method)
     )
     return kwargs
-  def add_APIGW_METHOD_S3(self, apigw, resource, method, settings_json):
-    kwargs = self.gen_kwargs_APIGW_METHOD_S3(apigw, resource, method, settings_json)
+  def add_APIGW_METHOD_S3(self, apigw, resource, method):
+    kwargs = self.gen_kwargs_APIGW_METHOD_S3(apigw, resource, method)
     self.YAML += self.APIGW_METHOD_S3.format(**kwargs)
   def gen_kwargs_APIGW_METHOD_LAMBDA(self, APP, urlpattern, method, ResourceId, apigw, resource):
     kwargs = dict(
@@ -441,21 +441,25 @@ settings_json["pip"]["layer"]["version"]=="latest":
   def add_APIGW_METHOD_LAMBDA(self, APP, urlpattern, method, ResourceId, apigw, resource):
     kwargs = self.gen_kwargs_APIGW_METHOD_LAMBDA(APP, urlpattern, method,  ResourceId, apigw, resource)
     self.YAML += self.APIGW_METHOD_LAMBDA.format(**kwargs)
-  def __init__(self, settings_json_path, yaml_add=None, versions=None):
+  def __init__(self, settings_json_path, versions=None):
     self.YAML = ""
     with open(settings_json_path, "r") as f:
-      settings_json = json.load(f)
-    if yaml_add is not None: 
-      with open(yaml_add, "r") as f:
-        yaml_add = f.read()
+      self.settings_json = json.load(f)
     CURRENT_DIR = os.path.dirname(settings_json_path)
-    self.set_versions(versions, CURRENT_DIR, settings_json)
-    sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
+    self.set_versions(versions, CURRENT_DIR)
+    sys.path.append(
+      os.path.join(
+        CURRENT_DIR, 
+        self.settings_json["layer"]["directory"], 
+        self.settings_json["layer"]["path"]
+      )
+    )
     from project import settings
+    self.settings = settings
     # YAMLを生成開始
-    self.add_BASE(settings, settings_json)
-    self.add_ROLE_LAMBDA(settings, settings_json)
-    self.add_ROLE_APIGW2S3(settings, settings_json)
+    self.add_BASE()
+    self.add_ROLE_LAMBDA()
+    self.add_ROLE_APIGW2S3()
     # API Gatewayを追加
     for apigw in settings.AWS["API"]["gateways"]:
       self.add_APIGW(apigw)
@@ -464,9 +468,9 @@ settings_json["pip"]["layer"]["version"]=="latest":
       urls = importlib.import_module(f"{APP['name']}.urls")
       for urlpattern in urls.urlpatterns:
         if urlpattern["integration"] == "lambda":
-          self.add_LAMBDA_FUNCTION(APP, urlpattern, settings, settings_json)
+          self.add_LAMBDA_FUNCTION(APP, urlpattern)
           for method in urlpattern["methods"]:
-            self.add_LAMBDA_PERMISSION(APP, urlpattern, method, settings)
+            self.add_LAMBDA_PERMISSION(APP, urlpattern, method)
     # Resourceを作る
     for i, apigw in enumerate(settings.AWS["API"]["gateways"]):
       resource_list = [""]
@@ -515,20 +519,15 @@ settings_json["pip"]["layer"]["version"]=="latest":
               ResourceId = "!Ref MyResource" + self.resource2index(resource)
             for method in urlpattern["methods"]:
               if urlpattern["integration"].lower() == "s3":
-                self.add_APIGW_METHOD_S3(apigw, resource, method, settings_json, ResourceId)
+                self.add_APIGW_METHOD_S3(apigw, resource, method, ResourceId)
               elif urlpattern["integration"].lower() == "lambda":
                 self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
               elif urlpattern["integration"].lower() == "cloudfront":
                 pass
               else:
                 raise ValueError(f"Invalid integration: {urlpattern['integration']}")
-    if yaml_add is not None:
-      self.YAML += "\n" + yaml_add
-    with open(settings_json["CloudFormation"]["template"], "w") as f:
+    with open(self.settings_json["CloudFormation"]["template"], "w") as f:
       f.write(self.YAML)
     print("Complete!")
-    self.init_after(settings, settings_json)
-  def init_after(self, settings, settings_json):
-    pass
 
 

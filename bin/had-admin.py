@@ -21,7 +21,6 @@ def parse_args():
   parser.add_argument("-c", "--cfn-create", metavar="settings-json", help="create cludformation stack")
   parser.add_argument("-x", "--cfn-exists", metavar="settings-json", help="check if cludformation stack exists")
   parser.add_argument("-Y", "--generate-cfn-yaml", metavar="settings-json", help="settings.json file")
-  parser.add_argument("-A", "--generate-cfn-yaml-add", metavar="yaml-file", help="yaml file to add to the generated yaml file")
   parser.add_argument("-H", "--generate-handlers", metavar="settings-json", help="settings.json file")
   parser.add_argument("-a", "--handlers2s3", metavar="settings-json", help="settings.json file")
   parser.add_argument("-p", "--project2s3", metavar="settings-json", help="settings.json file")
@@ -67,15 +66,19 @@ def main():
   now_str = datetime.datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y%m%d%H%M%S")
   if options.deploy_all:
     print("===== Deploy All =====")
-    from had.scripts import gen_handlers, handlers2s3, layers2s3, cfn_create, cfn_update, cfn_exists
-    from had.cfn import Template
+    from had.scripts import gen_handlers, handlers2s3, layers2s3, cfn_create, cfn_update, cfn_exists, cfn_template_create
+    # from had.cfn import Template
     gen_handlers(options.deploy_all)
     print("generated handlers.")
     handlers2s3(options.deploy_all, version=now_str)
     print("uploaded handlers.")
     layers2s3(options.deploy_all, version=now_str, project_upload=True, external_upload=True)
     print("uploaded layers.")
-    Template(options.deploy_all, options.generate_cfn_yaml_add, versions={"handlers": now_str, "external": now_str, "project": now_str})
+    # Template(options.deploy_all, options.generate_cfn_yaml_add, versions={"handlers": now_str, "external": now_str, "project": now_str})
+    cfn_template_create(
+      settings_json_path=options.deploy_all, 
+      versions={"handlers": now_str, "external": now_str, "project": now_str}
+    )
     print("generated cfn yaml.")
     if cfn_exists(options.deploy_all, print_message=False):
       cfn_update(options.deploy_all, wait=not options.no_wait)
@@ -105,9 +108,8 @@ def main():
     layers2s3(options.external2s3, version=now_str, external_upload=True)
   if options.generate_cfn_yaml:
     print("===== Generate CloudFormation YAML =====")
-    from had.cfn import Template
-    # gen_yaml(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
-    Template(options.generate_cfn_yaml, options.generate_cfn_yaml_add)
+    from had.scripts import cfn_template_create
+    cfn_template_create(options.generate_cfn_yaml)
 
   # どれか一つだけ実行可能
   if options.cfn_update:

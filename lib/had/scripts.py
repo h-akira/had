@@ -147,35 +147,30 @@ def layers2s3(settings_json_path, version, project_upload=False, external_upload
   with open(settings_json_path, "r") as f:
     settings_json = json.load(f)
   CURRENT_DIR = os.path.dirname(settings_json_path)
-  # if versions is None:
-  #   with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "r") as f:
-  #     versions = json.load(f)
   S3_BUCKET = settings_json['S3']['bucket']
   S3_KEY = settings_json['S3']['key']
   if external_upload:
     DIR = os.path.join(CURRENT_DIR, settings_json['pip']['layer']['directory'])
-    # if versions["external"].__class__ is int:
-    #   NEW_VERSION = versions['external'] + 1
-    # else:
-    #   NEW_VERSION = versions['external']
     upload_layer(S3_BUCKET, S3_KEY, version, DIR, 'external')
-    # versions["external"] = NEW_VERSION
-    # if versions["external"].__class__ is int:
-    #   with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
-    #     json.dump(versions, f, indent=2)
     _latest_version_overwrite(os.path.join(CURRENT_DIR, settings_json["latest_version"]), external=version)
   if project_upload:
     DIR = os.path.join(CURRENT_DIR, settings_json['layer']['directory'])
-    # if versions["project"].__class__ is int:
-    #   NEW_VERSION = versions['project'] + 1
-    # else:
-    #   NEW_VERSION = versions['project']
     upload_layer(S3_BUCKET, S3_KEY, version, DIR, 'project')
-    # versions["project"] = NEW_VERSION
-    # if versions["project"].__class__ is int:
-    #   with open(os.path.join(CURRENT_DIR, settings_json["latest_version"]), "w") as f:
-    #     json.dump(versions, f, indent=2)
     _latest_version_overwrite(os.path.join(CURRENT_DIR, settings_json["latest_version"]), project=version)
+
+def cfn_template_create(settings_json_path, versions=None):
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
+  sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
+  try:
+    from project.cfn import MyTemplate
+    MyTemplate(settings_json_path, versions)
+    # print("from project.cfn import MyTemplate")
+  except ImportError:
+    from had.cfn import Template
+    Template(settings_json_path, versions)
+    # print("from had.cfn import Template")
 
 def cfn_create(settings_json_path, wait=True):
   with open(settings_json_path, "r") as f:
