@@ -526,8 +526,8 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
                 pass
               else:
                 raise ValueError(f"Invalid integration: {urlpattern['integration']}")
+  def dump_yaml(self):
     with open(self.settings_json["CloudFormation"]["template"], "w") as f:
       f.write(self.YAML)
-    print("Complete!")
 
 

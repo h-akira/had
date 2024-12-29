@@ -165,12 +165,13 @@ def cfn_template_create(settings_json_path, versions=None):
   sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
   try:
     from project.cfn import MyTemplate
-    MyTemplate(settings_json_path, versions)
+    template = MyTemplate(settings_json_path, versions)
     # print("from project.cfn import MyTemplate")
   except ImportError:
     from had.cfn import Template
-    Template(settings_json_path, versions)
+    template = Template(settings_json_path, versions)
     # print("from had.cfn import Template")
+  template.dump_yaml()
 
 def cfn_create(settings_json_path, wait=True):
   with open(settings_json_path, "r") as f:
