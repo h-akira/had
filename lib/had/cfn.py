@@ -188,7 +188,8 @@ Resources:
 {binary_media_types}
 
   MyApiGatewayDeployment{apigw_index}{random_id}:
-    DependsOn: MyApiGatewayMethod{method_index} 
+    DependsOn: 
+{depend_methods}
     Type: AWS::ApiGateway::Deployment
     DeletionPolicy: Delete
     Properties:
@@ -325,7 +326,7 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
   def add_ROLE_APIGW2S3(self):
     kwargs = self.gen_kwargs_ROLE_APIGW2S3()
     self.YAML += self.ROLE_APIGW2S3.format(**kwargs)
-  def gen_kwargs_APIGW(self, apigw, depends_on_method_index):
+  def gen_kwargs_APIGW(self, apigw, depend_method_indexs):
     binary_media_types = ""
     if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
       binary_media_types += f"""\
@@ -337,11 +338,19 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
         binary_media_types += """\
         - {}
 """.format(binary_media_type)
+    depend_methods = ""
+    for depend_method_index in depend_method_indexs:
+      depend_methods += f"""\
+      - MyApiGatewayMethod{depend_method_index}
+"""
+    else:
+      if depend_methods != "" and depend_methods[-1] == "\n":
+        depend_methods = depend_methods[:-1]
     kwargs = dict(
       apigw_index=self.apigw2index(apigw["name"]),
       api_name=apigw["name"],
       binary_media_types=binary_media_types,
-      method_index=depends_on_method_index,
+      depend_methods=depend_methods,
       random_id=self.gen_random_id()
     )
     return kwargs
@@ -476,6 +485,7 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
     # Resourceを作る
     depends = {}
     for i, apigw in enumerate(settings.AWS["API"]["gateways"]):
+      depends[apigw["name"]] = []
       resource_list = [""]
       for APP in settings.APPS:
         root_resource = APP["url"]
@@ -522,18 +532,18 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
               ResourceId = "!Ref MyResource" + self.resource2index(resource)
             for method in urlpattern["methods"]:
               if urlpattern["integration"].lower() == "s3":
-                # self.add_APIGW_METHOD_S3(apigw, resource, method, ResourceId)
-                depends[apigw["name"]] = self.add_APIGW_METHOD_S3(apigw, resource, method)
+                method_index = self.add_APIGW_METHOD_S3(apigw, resource, method)
+                depends[apigw["name"]].append(method_index)
               elif urlpattern["integration"].lower() == "lambda":
-                # self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
-                depends[apigw["name"]] = self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
+                method_index = self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
+                depends[apigw["name"]].append(method_index)
               elif urlpattern["integration"].lower() == "cloudfront":
                 pass
               else:
                 raise ValueError(f"Invalid integration: {urlpattern['integration']}")
     # API Gatewayを追加
     for apigw in settings.AWS["API"]["gateways"]:
-      self.add_APIGW(apigw, depends[apigw["name"]])
+      self.add_APIGW(apigw, depends_on_method_index=depends[apigw["name"]])
   def dump_yaml(self):
     with open(self.settings_json["CloudFormation"]["template"], "w") as f:
       f.write(self.YAML)
