@@ -186,7 +186,9 @@ Resources:
         Types:
           - REGIONAL
 {binary_media_types}
+
   MyApiGatewayDeployment{apigw_index}{random_id}:
+    DependsOn: MyApiGatewayMethod{method_index} 
     Type: AWS::ApiGateway::Deployment
     DeletionPolicy: Delete
     Properties:
@@ -323,7 +325,7 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
   def add_ROLE_APIGW2S3(self):
     kwargs = self.gen_kwargs_ROLE_APIGW2S3()
     self.YAML += self.ROLE_APIGW2S3.format(**kwargs)
-  def gen_kwargs_APIGW(self, apigw):
+  def gen_kwargs_APIGW(self, apigw, depends_on_method_index):
     binary_media_types = ""
     if "binary-media-types" in apigw.keys() and len(apigw["binary-media-types"]) > 0:
       binary_media_types += f"""\
@@ -339,11 +341,12 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
       apigw_index=self.apigw2index(apigw["name"]),
       api_name=apigw["name"],
       binary_media_types=binary_media_types,
+      method_index=depends_on_method_index,
       random_id=self.gen_random_id()
     )
     return kwargs
-  def add_APIGW(self, apigw):
-    kwargs = self.gen_kwargs_APIGW(apigw)
+  def add_APIGW(self, apigw, depends_on_method_index):
+    kwargs = self.gen_kwargs_APIGW(apigw, depends_on_method_index)
     self.YAML += self.APIGW.format(**kwargs)
   def gen_kwargs_LAMBDA_FUNCTION(self, APP, urlpattern):
     prefix=self.settings.AWS["Lambda"]["prefix"]
@@ -427,6 +430,7 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
   def add_APIGW_METHOD_S3(self, apigw, resource, method):
     kwargs = self.gen_kwargs_APIGW_METHOD_S3(apigw, resource, method)
     self.YAML += self.APIGW_METHOD_S3.format(**kwargs)
+    return kwargs["method_index"]
   def gen_kwargs_APIGW_METHOD_LAMBDA(self, APP, urlpattern, method, ResourceId, apigw, resource):
     kwargs = dict(
       HttpMethod=method,
@@ -441,6 +445,7 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
   def add_APIGW_METHOD_LAMBDA(self, APP, urlpattern, method, ResourceId, apigw, resource):
     kwargs = self.gen_kwargs_APIGW_METHOD_LAMBDA(APP, urlpattern, method,  ResourceId, apigw, resource)
     self.YAML += self.APIGW_METHOD_LAMBDA.format(**kwargs)
+    return kwargs["method_index"]
   def __init__(self, settings_json_path, versions=None):
     self.YAML = ""
     with open(settings_json_path, "r") as f:
@@ -460,9 +465,6 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
     self.add_BASE()
     self.add_ROLE_LAMBDA()
     self.add_ROLE_APIGW2S3()
-    # API Gatewayを追加
-    for apigw in settings.AWS["API"]["gateways"]:
-      self.add_APIGW(apigw)
     # Lambdaを追加
     for APP in settings.APPS:
       urls = importlib.import_module(f"{APP['name']}.urls")
@@ -472,6 +474,7 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
           for method in urlpattern["methods"]:
             self.add_LAMBDA_PERMISSION(APP, urlpattern, method)
     # Resourceを作る
+    depends = {}
     for i, apigw in enumerate(settings.AWS["API"]["gateways"]):
       resource_list = [""]
       for APP in settings.APPS:
@@ -519,13 +522,18 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
               ResourceId = "!Ref MyResource" + self.resource2index(resource)
             for method in urlpattern["methods"]:
               if urlpattern["integration"].lower() == "s3":
-                self.add_APIGW_METHOD_S3(apigw, resource, method, ResourceId)
+                # self.add_APIGW_METHOD_S3(apigw, resource, method, ResourceId)
+                depends[apigw["name"]] = self.add_APIGW_METHOD_S3(apigw, resource, method)
               elif urlpattern["integration"].lower() == "lambda":
-                self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
+                # self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
+                depends[apigw["name"]] = self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
               elif urlpattern["integration"].lower() == "cloudfront":
                 pass
               else:
                 raise ValueError(f"Invalid integration: {urlpattern['integration']}")
+    # API Gatewayを追加
+    for apigw in settings.AWS["API"]["gateways"]:
+      self.add_APIGW(apigw, depends[apigw["name"]])
   def dump_yaml(self):
     with open(self.settings_json["CloudFormation"]["template"], "w") as f:
       f.write(self.YAML)
