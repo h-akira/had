@@ -208,6 +208,14 @@ APPS = [
 DEBUG = True
 """
 
+cfn_py_init = """\
+from had.cfn import Template
+
+class MyTemplate(Template):
+  def __init__(self, settings_json_path, versions=None):
+    super().__init__(settings_json_path, versions)
+"""
+
 def get_account():
   account = subprocess.run(
     ["aws", "sts", "get-caller-identity"],
@@ -276,5 +284,7 @@ def start_project():
         s3_bucket=s3_bucket
       )
     )
+  with open(os.path.join(project_name, "build/project/python/lib/python{}/site-packages/project/cfn.py".format(python_version)), "w") as f:
+    f.write(cfn_py_init)
 
 
