@@ -253,6 +253,7 @@ class MyTemplate(Template):
       # accountID=self.settings.AWS["account"],
       # userPoolID=self.settings.AWS["cognito"]["userPoolID"],
     )
+    return kwargs
   def __init__(self, settings_json_path, versions=None):
     super().__init__(settings_json_path, versions)
 """
