@@ -212,6 +212,47 @@ cfn_py_init = """\
 from had.cfn import Template
 
 class MyTemplate(Template):
+  ROLE_LAMBDA = \"\"\"\
+  # Lambda実行ロールの作成
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: "/"
+      ManagedPolicyArns:
+      - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+      - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+      MaxSessionDuration: 3600
+      RoleName: "{role_lambda_name}"
+      Description: lambda-common"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "lambda.amazonaws.com"
+      # Policies:
+      #   - PolicyName: "CognitoAdminAccess"
+      #     PolicyDocument:
+      #       Version: "2012-10-17"
+      #       Statement:
+      #         - Effect: "Allow"
+      #           Action:
+      #             - "cognito-idp:AdminCreateUser"
+      #             - "cognito-idp:AdminGetUser"
+      #             - "cognito-idp:AdminUpdateUserAttributes"
+      #             - "cognito-idp:AdminDeleteUser"
+      #             - "cognito-idp:AdminSetUserPassword"
+      #           Resource: "arn:aws:cognito-idp:{region}:{accountID}:userpool/{userPoolID}"
+\"\"\"
+  def gen_kwargs_ROLE_LAMBDA(self):
+    kwargs = dict(
+      role_lambda_name=self.settings.AWS["Lambda"]["role"]["name"],
+      # region=self.settings.AWS["region"],
+      # accountID=self.settings.AWS["account"],
+      # userPoolID=self.settings.AWS["cognito"]["userPoolID"],
+    )
   def __init__(self, settings_json_path, versions=None):
     super().__init__(settings_json_path, versions)
 """

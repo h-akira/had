@@ -109,19 +109,6 @@ class Template:
           Effect: "Allow"
           Principal:
             Service: "lambda.amazonaws.com"
-      Policies:
-        - PolicyName: "CognitoAdminAccess"
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - "cognito-idp:AdminCreateUser"
-                  - "cognito-idp:AdminGetUser"
-                  - "cognito-idp:AdminUpdateUserAttributes"
-                  - "cognito-idp:AdminDeleteUser"
-                  - "cognito-idp:AdminSetUserPassword"
-                Resource: "arn:aws:cognito-idp:{region}:{accountID}:userpool/{userPoolID}"
 """
   ROLE_APIGW2S3 = """\
   # API GatewayからS3を参照するためのロール
@@ -297,17 +284,8 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
     )
     return kwargs
   def gen_kwargs_ROLE_LAMBDA(self):
-    if "account" not in self.settings.AWS.keys():
-      try:
-        import boto3
-      except:
-        raise ImportError("boto3 is not installed. Please install boto3 or set AWS['account'] in settings.py.")
-      self.settings.AWS["account"] = boto3.client("sts").get_caller_identity()["Account"]
     kwargs = dict(
-      region=self.settings.AWS["region"],
-      accountID=self.settings.AWS["account"],
-      role_lambda_name=self.settings.AWS["Lambda"]["role"]["name"],
-      userPoolID=self.settings.AWS["cognito"]["userPoolID"],
+      role_lambda_name=self.settings.AWS["Lambda"]["role"]["name"]
     )
     return kwargs
   def gen_kwargs_ROLE_APIGW2S3(self):
