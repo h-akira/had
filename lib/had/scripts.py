@@ -251,6 +251,96 @@ def cfn_exists(settings_json_path, print_message=True):
     else:
       raise Exception(f"An error occurred: {e.stderr.decode()}")
 
+def show_policy(settings_json_path):
+  with open(settings_json_path, "r") as f:
+    settings_json = json.load(f)
+  CURRENT_DIR = os.path.dirname(settings_json_path)
+  sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
+  from project import settings
+  S3PATH = os.path.join(settings.AWS["S3"]["bucket"], settings_json["S3"]["key"], "*")
+  policy = {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "Lambda",
+        "Effect": "Allow",
+        "Action": [
+          "lambda:CreateFunction",
+          "lambda:PublishLayerVersion",
+          "lambda:UpdateFunctionCode",
+          "lambda:DeleteFunction",
+          "lambda:DeleteLayerVersion",
+          "lambda:GetFunction",
+          "lambda:GetLayerVersion",
+          "lambda:RemovePermission",
+          "lambda:AddPermission",
+          "lambda:UpdateFunctionConfiguration"
+        ],
+        "Resource": [
+          f"arn:aws:lambda:{settings.AWS['region']}:{settings.AWS['account']}:function:{settings.AWS['Lambda']['prefix']}-*",
+          f"arn:aws:lambda:{settings.AWS['region']}:{settings.AWS['account']}:layer:{settings_json['pip']['layer']['name']}",
+          f"arn:aws:lambda:{settings.AWS['region']}:{settings.AWS['account']}:layer:{settings_json['layer']['name']}",
+          f"arn:aws:lambda:{settings.AWS['region']}:{settings.AWS['account']}:layer:{settings_json['pip']['layer']['name']}:*",
+          f"arn:aws:lambda:{settings.AWS['region']}:{settings.AWS['account']}:layer:{settings_json['layer']['name']}:*"
+        ]
+      },
+      {
+        "Sid": "IAMRoles",
+        "Effect": "Allow",
+        "Action": [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:PassRole",
+          "iam:DetachRolePolicy",
+          "iam:UpdateRole",
+          "iam:GetRole",
+          "iam:DeleteRolePolicy",
+          "iam:AttachRolePolicy",
+          "iam:PutRolePolicy"
+        ],
+        "Resource": [
+          f"arn:aws:iam::{settings.AWS['account']}:role/{settings.AWS['API']['role2s3']['name']}",
+          f"arn:aws:iam::{settings.AWS['account']}:role/{settings.AWS['Lambda']['role']['name']}"
+        ]
+      },
+      {
+        "Sid": "CloudFormation",
+        "Effect": "Allow",
+        "Action": [
+          "cloudformation:CreateStack",
+          "cloudformation:DeleteStack",
+          "cloudformation:DescribeStack*",
+          "cloudformation:UpdateStack",
+          "cloudformation:CancelUpdateStack"
+        ],
+        "Resource": f"arn:aws:cloudformation:{settings.AWS['region']}:{settings.AWS['account']}:stack/{settings_json['CloudFormation']['stack_name']}/*"
+      },
+      {
+        "Sid": "S3Access",
+        "Effect": "Allow",
+        "Action": [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ],
+        "Resource": f"arn:aws:s3:::{S3PATH}"
+      },
+      {
+        "Sid": "GlobalActions",
+        "Effect": "Allow",
+        "Action": [
+          "apigateway:DELETE",
+          "apigateway:POST",
+          "apigateway:GET",
+          "apigateway:PUT",
+          "apigateway:PATCH"
+        ],
+        "Resource": "*"
+      }
+    ]
+  }
+  print(json.dumps(policy, indent=4))
+
 def _upload_yaml_to_s3(local_file, settings_json):
   s3_key = os.path.join(settings_json['S3']['key'],"CloudFormation", f"{datetime.datetime.now(ZoneInfo('Asia/Tokyo')).strftime('%Y%m%d%H%M%S')}.yaml")
   subprocess.run(
@@ -288,7 +378,5 @@ def _latest_version_overwrite(latest_version_json_path, versions=None, handler=N
       raise Exception("If versions is not None, handler, project, external must be None.")
   with open(latest_version_json_path, "w") as f:
     json.dump(versions, f, indent=2)
-
-
 
 

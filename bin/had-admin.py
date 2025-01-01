@@ -16,6 +16,7 @@ def parse_args():
 """, formatter_class = argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--version", action="version", version='%(prog)s 0.0.1')
   parser.add_argument("-s", "--start-project", action="store_true", help="start project")
+  parser.add_argument("-P", "--policy", metavar="settings-json", help="show policy sample for deploy")
   parser.add_argument("-u", "--cfn-update", metavar="settings-json", help="update cludformation stack")
   parser.add_argument("-d", "--cfn-delete", metavar="settings-json", help="delete cludformation stack")
   parser.add_argument("-c", "--cfn-create", metavar="settings-json", help="create cludformation stack")
@@ -54,6 +55,8 @@ def print_not_executed(options, executed: list):
     print("-e/--external2s3 option is not executed.")
   if options.deploy_all and "deploy_all" not in executed:
     print("-D/--deploy-all option is not executed.")
+  if options.policy and "policy" not in executed:
+    print("-P/--policy option is not executed.")
 
 def main():
   options = parse_args()
@@ -62,6 +65,10 @@ def main():
     from had.start import start_project
     start_project()
     print_not_executed(options, ["start_project"])
+    sys.exit()
+  if options.policy:
+    from had.scripts import show_policy
+    show_policy(options.policy)
     sys.exit()
   now_str = datetime.datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y%m%d%H%M%S")
   if options.deploy_all:
