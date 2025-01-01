@@ -232,6 +232,7 @@ class MyTemplate(Template):
           Effect: "Allow"
           Principal:
             Service: "lambda.amazonaws.com"
+\"\"\"
       # Policies:
       #   - PolicyName: "CognitoAdminAccess"
       #     PolicyDocument:
@@ -245,7 +246,6 @@ class MyTemplate(Template):
       #             - "cognito-idp:AdminDeleteUser"
       #             - "cognito-idp:AdminSetUserPassword"
       #           Resource: "arn:aws:cognito-idp:{region}:{accountID}:userpool/{userPoolID}"
-\"\"\"
   def gen_kwargs_ROLE_LAMBDA(self):
     kwargs = dict(
       role_lambda_name=self.settings.AWS["Lambda"]["role"]["name"],

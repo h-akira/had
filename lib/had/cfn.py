@@ -87,7 +87,7 @@ class Template:
         Uri: !Sub
           arn:aws:apigateway:${{AWS::Region}}:lambda:path/2015-03-31/functions/${{MyLambdaFunction{function_index}.Arn}}/invocations
       MethodResponses:
-        - StatusCode: '200'
+        - StatusCode: 200
 """
   ROLE_LAMBDA = """\
   # Lambda実行ロールの作成
@@ -101,7 +101,7 @@ class Template:
       - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
       MaxSessionDuration: 3600
       RoleName: "{role_lambda_name}"
-      Description: lambda-common"
+      Description: "lambda-common"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -391,17 +391,17 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
   def add_APIGW_RESOURCE(self, apigw, resource, ParentId, PathPart):
     kwargs = self.gen_kwargs_APIGW_RESOURCE(apigw, resource, ParentId, PathPart)
     self.YAML += self.APIGW_RESOURCE.format(**kwargs)
-  def gen_kwargs_APIGW_METHOD_S3(self, apigw, resource, method, ResourceId):
-    DIC=urlpattern["function"]()
+  def gen_kwargs_APIGW_METHOD_S3(self, apigw, resource, method, ResourceId, DIC):
+    # DIC=urlpattern["function"]()
     if len(DIC["parameters"]) > 0:
       RequestParameters = "RequestParameters:\n"
       for key in DIC["parameters"]:
         RequestParameters += """\
-            "integration.request.path.{key}": "method.request.path.{key}"
+          "integration.request.path.{key}": "method.request.path.{key}"
 """.format(key=key)
       else:
         RequestParameters += """\
-            """
+          """
     else:
       RequestParameters = ""
     kwargs = dict(
@@ -410,12 +410,12 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
       S3_KEY=os.path.join(self.settings_json["S3"]["key"], "integration", DIC["path"]),
       RequestParameters=RequestParameters,
       CONTENT_TYPE=DIC["content_type"],
-      apigw_index=apigw2index(apigw["name"]),
-      method_index = resource2index(resource) + method2index(method)
+      apigw_index=self.apigw2index(apigw["name"]),
+      method_index = self.resource2index(resource) + self.method2index(method)
     )
     return kwargs
-  def add_APIGW_METHOD_S3(self, apigw, resource, method):
-    kwargs = self.gen_kwargs_APIGW_METHOD_S3(apigw, resource, method)
+  def add_APIGW_METHOD_S3(self, apigw, resource, method, ResourceId, DIC):
+    kwargs = self.gen_kwargs_APIGW_METHOD_S3(apigw, resource, method, ResourceId, DIC)
     self.YAML += self.APIGW_METHOD_S3.format(**kwargs)
     return kwargs["method_index"]
   def gen_kwargs_APIGW_METHOD_LAMBDA(self, APP, urlpattern, method, ResourceId, apigw, resource):
@@ -510,7 +510,8 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
               ResourceId = "!Ref MyResource" + self.resource2index(resource)
             for method in urlpattern["methods"]:
               if urlpattern["integration"].lower() == "s3":
-                method_index = self.add_APIGW_METHOD_S3(apigw, resource, method)
+                DIC = urlpattern["function"]()
+                method_index = self.add_APIGW_METHOD_S3(apigw, resource, method, ResourceId, DIC)
                 depends[apigw["name"]].append(method_index)
               elif urlpattern["integration"].lower() == "lambda":
                 method_index = self.add_APIGW_METHOD_LAMBDA(APP, urlpattern, method, ResourceId, apigw, resource)
