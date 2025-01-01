@@ -401,7 +401,7 @@ self.settings_json["pip"]["layer"]["version"]=="latest":
 """.format(key=key)
       else:
         RequestParameters += """\
-          """
+        """
     else:
       RequestParameters = ""
     kwargs = dict(
