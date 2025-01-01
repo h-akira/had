@@ -257,7 +257,6 @@ def show_policy(settings_json_path):
   CURRENT_DIR = os.path.dirname(settings_json_path)
   sys.path.append(os.path.join(CURRENT_DIR,settings_json["layer"]["directory"], settings_json["layer"]["path"]))
   from project import settings
-  S3PATH = os.path.join(settings.AWS["S3"]["bucket"], settings_json["S3"]["key"], "*")
   policy = {
     "Version": "2012-10-17",
     "Statement": [
@@ -321,9 +320,13 @@ def show_policy(settings_json_path):
         "Action": [
           "s3:PutObject",
           "s3:GetObject",
-          "s3:DeleteObject"
+          "s3:DeleteObject",
+          "s3:ListBucket"
         ],
-        "Resource": f"arn:aws:s3:::{S3PATH}"
+        "Resource": [
+          f"arn:aws:s3:::{settings.AWS['S3']['bucket']}",
+          f"arn:aws:s3:::{os.path.join(settings.AWS['S3']['bucket'], settings.AWS['S3']['key'], '*')}",
+        ]
       },
       {
         "Sid": "GlobalActions",
