@@ -147,7 +147,6 @@ settings_json_init = """\
 }}"""
 
 settings_py_init = """\
-import sys
 import os
 
 PROJECT_NAME = "{project_name}"
