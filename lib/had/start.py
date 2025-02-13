@@ -208,6 +208,10 @@ DEBUG = True
 """
 
 cfn_py_init = """\
+# This file exists to overwrite the base class when generating a cloud formation template.
+# The base class is located at the following URL:
+# https://github.com/h-akira/had/blob/main/lib/had/cfn.py
+
 from had.cfn import Template
 
 class MyTemplate(Template):
